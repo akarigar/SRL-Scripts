@@ -1,0 +1,12 @@
+{$f-}
+
+function getGaussRangePercentage(mid: integer; percentage: extended = 0.1): integer;
+var
+  delta: extended;
+begin
+  delta := mid * percentage;
+  exit(gaussRangeInt(round(mid - delta), round(mid + delta)));
+end;
+
+{$f+}
+

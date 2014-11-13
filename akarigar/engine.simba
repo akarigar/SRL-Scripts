@@ -1,0 +1,247 @@
+{$include_once srl-6/srl.simba}
+{$include_once srl-6/lib/misc/srlplayerform.simba}
+
+{$IFDEF SPS}
+{$include_once SPS/lib/sps-rs3.simba}
+{$ENDIF}
+
+{$include_once lib/util/random.simba}
+{$f-}
+
+const
+  // Integers
+  P_BREAK_COUNT := 99;
+  P_BREAK_LENGTH := P_BREAK_COUNT - 1;
+  P_LOOP_COUNT := P_BREAK_LENGTH - 1;
+  P_NEXT_BREAK := P_LOOP_COUNT - 1;
+  P_PLAY_TIME := P_NEXT_BREAK - 1;
+  P_TIME_BREAKED := P_PLAY_TIME - 1;
+  P_TIME_RAN := P_TIME_BREAKED - 1;
+
+  // Booleans
+  P_TAKE_BREAKS := 99;
+
+type TEngine = record
+  antiBan, declarePlayers: procedure();
+  showProgress: procedure(timeRan: integer);
+  tock: function(): boolean;
+end;
+
+var
+  engine: TEngine;
+{$IFDEF SPS}
+  currentArea: TSPSArea;
+{$ENDIF}
+
+// Setters =====================================================================
+function TEngine.onTick(tock: function(): boolean): TEngine;
+begin
+  self.tock := @tock;
+  exit(self);
+end;
+
+function TEngine.setAntiBan(antiBan: procedure()): TEngine;
+begin
+  self.antiBan := @antiBan;
+  exit(self);
+end;
+
+function TEngine.setDeclarePlayers(declarePlayers: procedure()): TEngine;
+begin
+  self.declarePlayers := @declarePlayers;
+  exit(self);
+end;
+// End Setters =================================================================
+
+procedure TEngine.takeBreak(time: integer);
+var
+  timeRemaining: integer;
+  timer: TTimeMarker;
+begin
+  with players[currentPlayer] do
+  begin
+    timeRemaining := time := getGaussRangePercentage(time);
+    writeLn('Taking a break for ', msToTime(timeRemaining, TIME_SHORT));
+
+    if isLoggedIn() then
+      if Random() > 0.8 then logout()
+      else exitToLobby();
+
+    timer.start();
+    while (timeRemaining := time - timer.getTime()) > 45000 do
+    begin
+      writeLn('Break finishes in ', msToTime(timeRemaining, TIME_SHORT));
+      wait(45000);
+    end;
+    if timeRemaining > 0 then
+      wait(timeRemaining);
+
+
+    inc(integers[P_TIME_BREAKED], timer.getTime());
+    inc(integers[P_BREAK_COUNT]);
+    integers[P_NEXT_BREAK] := getGaussRangePercentage(integers[P_PLAY_TIME], 0.2);
+    writeLn('Break finished. Resuming script');
+  end;
+end;
+
+function TEngine.randomlyWait(min: integer = 250; max: integer = 750): boolean;
+begin
+  wait(gaussRangeInt(min, max));
+  exit(true);
+end;
+
+{$IFDEF SPS}
+var __area: TSPSArea;
+
+function TEngine.goCloser(symbol, dist: integer = 10): boolean;
+var p: TPoint;
+begin
+  if not minimap.findSymbol(p, symbol, minimap.getBounds()) then
+    exit(false);
+
+  if distance(p, minimap.getCenterPoint()) < dist then
+    exit(true);
+
+  mouse(p, mouse_Left);
+  exit(minimap.waitPlayerMoving());
+end
+
+function TEngine.loadArea(mapName: string): TEngine;
+begin
+  currentArea.setup(mapName, RUNESCAPE_OTHER);
+  exit(self);
+end;
+
+function TEngine.walkPath(path: TPointArray; smybol: integer = -1; distance: integer = 10): boolean;
+begin
+  result := currentArea.walkPath(path) or self.walkTo(path[high(path)]);
+  if (not result) and (smybol >= 0) then
+    result := self.goCloser(smybol, distance);
+end;
+
+{
+  Tries to walk to the given point in a straight line.
+}
+function TEngine.walkTo(dest: TPoint): boolean;
+var
+  dx, dy, stepX, stepY, i: integer;
+  p: TPoint;
+  path: TPointArray;
+begin
+  p := currentArea.getPlayerPos();
+  if (p.X = -1) or (p.Y = -1) then exit(false);
+  dx := 20;
+  dy := 20;
+  if p.X > dest.X then dx *= -1;
+  if p.Y > dest.Y then dy *= -1;
+  stepX := floor(abs((dest.X - p.X) / dx));
+  stepY := floor(abs((dest.Y - p.Y) / dy));
+  if stepX < stepY then setLength(path, stepY + 1)
+  else setLength(path, stepX + 1);
+
+  for i := 0 to high(path) do
+  begin
+    if i < stepX then p.X += dx
+    else p.X := dest.X;
+    if i < stepY then p.Y += dy
+    else p.Y := dest.Y;
+    path[i] := Point(p.x, p.y);
+  end;
+  exit(currentArea.walkPath(path));
+end;
+{$ENDIF}
+
+procedure TEngine.__declarePlayers();
+var
+  i: integer;
+begin
+  players.setup(playerForm.players);
+
+  if @self.declarePlayers <> nil then
+    self.declarePlayers();
+
+  for i := 0 to high(players) do
+    with players[i], playerForm.players[i] do
+    begin
+      integers[P_PLAY_TIME] := strToInt(settings[high(playerForm.editBoxLabels) - 1]) * 60000;
+      integers[P_BREAK_LENGTH] := strToInt(settings[high(playerForm.editBoxLabels)]) * 60000;
+      booleans[P_TAKE_BREAKS] := strToBool(settings[high(settings)]);
+
+      // Set up the time for the next break, if we are taking breaks.
+      if booleans[P_TAKE_BREAKS] then
+        integers[P_NEXT_BREAK] := getGaussRangePercentage(integers[P_PLAY_TIME], 0.2);
+    end;
+end;
+
+procedure TEngine.__initForm();
+begin
+  with playerForm do
+  begin
+    editBoxLabels.combine(['Take a break around (mins)', 'Duration of break (mins)']);
+    editBoxDefaults.combine(['60', '5']);
+    editBoxHints.combine(['Around how long to run before taking a break?', 'Around how long should the break be?']);
+
+    checkBoxLabels.combine(['Take Breaks']);
+    checkBoxDefaults.combine(['True']);
+    checkBoxHints.combine(['Should I take breaks?']);
+  end;
+end;
+
+procedure TEngine.__runLoop();
+var
+  timer: TTimeMarker;
+begin
+  print('TEngine.__runLoop()');
+  SRL_Events[EVENT_ANTIBAN] := @self.antiBan;
+  while players.getActive() > 0 do
+  begin
+    with players[currentPlayer] do
+    begin
+      timer.start();
+      if not isLoggedIn() then
+        login();
+      closeAdWindow();
+      closePollWindow();
+      exitTreasure();
+
+      while isLoggedIn() and isActive and
+          ((not booleans[P_TAKE_BREAKS]) or (timer.getTime() <= integers[P_NEXT_BREAK])) do
+      begin
+        isActive := self.tock();
+        inc(integers[P_LOOP_COUNT]);
+
+        if @self.showProgress <> nil then
+          self.showProgress(integers[P_TIME_RAN] + timer.getTime());
+      end;
+    end;
+    inc(players[currentPlayer].integers[P_TIME_RAN], timer.getTime());
+
+    if players[currentPlayer].isActive then
+      self.takeBreak(players[currentPlayer].integers[P_BREAK_LENGTH])
+    else if players.getActive() > 0 then
+      players.randomNext(false);
+
+    if isLoggedIn() then
+      players[currentPlayer].logout();
+    timer.reset();
+  end;
+end;
+
+function TEngine.run(): boolean;
+begin
+  self.__initForm();
+  runPlayerForm();
+  if not playerForm.isScriptReady then
+    exit(false);
+
+  self.__declarePlayers();
+  if not setupSRL() then
+    exit(false);
+
+  {$IFDEF SMART}
+  smartEnableDrawing := true;
+  {$ENDIF}
+  self.__runLoop();
+  exit(true);
+end;
+
