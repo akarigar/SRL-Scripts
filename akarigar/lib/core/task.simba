@@ -1,0 +1,23 @@
+{$f-}
+
+type TTaskStatus = (
+  ERR,
+  DONE
+);
+
+type TTask = record
+  name: string;
+  pathToTask: TPointArray;
+  tick: function(): TTaskStatus;
+end;
+
+type TTaskList = array of TTask;
+
+procedure TTaskList.append(task: TTask);
+begin
+  setLength(self, length(self) + 1);
+  self[high(self)] := task;
+end;
+
+{$f+}
+

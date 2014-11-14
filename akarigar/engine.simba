@@ -1,10 +1,8 @@
 {$include_once srl-6/srl.simba}
 {$include_once srl-6/lib/misc/srlplayerform.simba}
-
-{$IFDEF SPS}
 {$include_once SPS/lib/sps-rs3.simba}
-{$ENDIF}
 
+{$include_once lib/core/task.simba}
 {$include_once lib/util/random.simba}
 {$f-}
 
@@ -24,34 +22,57 @@ const
 type TEngine = record
   antiBan, declarePlayers: procedure();
   showProgress: procedure(timeRan: integer);
-  tock: function(): boolean;
+  __tasks: TTaskList;
 end;
 
 var
   engine: TEngine;
-{$IFDEF SPS}
   currentArea: TSPSArea;
-{$ENDIF}
 
 // Setters =====================================================================
-function TEngine.onTick(tock: function(): boolean): TEngine;
-begin
-  self.tock := @tock;
-  exit(self);
-end;
-
 function TEngine.setAntiBan(antiBan: procedure()): TEngine;
 begin
-  self.antiBan := @antiBan;
+  self.antiBan := antiBan;
   exit(self);
 end;
 
 function TEngine.setDeclarePlayers(declarePlayers: procedure()): TEngine;
 begin
-  self.declarePlayers := @declarePlayers;
+  self.declarePlayers := declarePlayers;
+  exit(self);
+end;
+
+function TEngine.setTasks(tasks: TTaskList): TEngine;
+begin
+  self.__tasks := tasks;
   exit(self);
 end;
 // End Setters =================================================================
+
+function TEngine.goCloser(symbol, dist: integer = 10): boolean;
+var p: TPoint;
+begin
+  if not minimap.findSymbol(p, symbol, minimap.getBounds()) then
+    exit(false);
+
+  if distance(p, minimap.getCenterPoint()) < dist then
+    exit(true);
+
+  mouse(p, mouse_Left);
+  exit(minimap.waitPlayerMoving());
+end
+
+function TEngine.loadArea(mapName: string): TEngine;
+begin
+  currentArea.setup(mapName, RUNESCAPE_OTHER);
+  exit(self);
+end;
+
+function TEngine.randomlyWait(min: integer = 250; max: integer = 750): boolean;
+begin
+  wait(gaussRangeInt(min, max));
+  exit(true);
+end;
 
 procedure TEngine.takeBreak(time: integer);
 var
@@ -84,36 +105,59 @@ begin
   end;
 end;
 
-function TEngine.randomlyWait(min: integer = 250; max: integer = 750): boolean;
+function TEngine.useObject(
+  color, tolerance: integer;
+  colorSettings: TColorSettings;
+  bounds: TBox;
+  midPoint: TPoint;
+  overText: TStringArray
+): boolean;
+var
+  i, x, y: Integer;
+  tpa: TPointArray;
+  atpa: T2DPointArray;
 begin
-  wait(gaussRangeInt(min, max));
-  exit(true);
-end;
-
-{$IFDEF SPS}
-var __area: TSPSArea;
-
-function TEngine.goCloser(symbol, dist: integer = 10): boolean;
-var p: TPoint;
-begin
-  if not minimap.findSymbol(p, symbol, minimap.getBounds()) then
+  if not findColorsSpiralTolerance(x, y, tpa, color, bounds, tolerance, colorSettings) then
     exit(false);
 
-  if distance(p, minimap.getCenterPoint()) < dist then
-    exit(true);
+  mainscreen.filterPointsPlayer(tpa);
+  atpa := tpa.toATPA(25, 25);
+  if midPoint.x = -1 or midPoint.y = -1 then
+    atpa.sortBySize()
+  else
+    atpa.sortFromMidPoint(midPoint);
 
-  mouse(p, mouse_Left);
-  exit(minimap.waitPlayerMoving());
-end
+  for i := 0 to high(atpa) do
+  begin
+    mouseBox(atpa[i].getBounds());
+    if self.randomlyWait() and isMouseOverText(overText)  then
+    begin
+      fastClick(mouse_left);
+      exit(self.randomlyWait() and minimap.waitPlayerMoving());
+    end;
+  end;
+  exit(false);
+end;
 
-function TEngine.loadArea(mapName: string): TEngine;
+function TEngine.useObject(
+  color, tolerance: integer;
+  colorSettings: TColorSettings;
+  bounds: TBox;
+  midPoint: TPoint;
+  overText: TStringArray;
+  tries: integer
+): boolean; overload;
+var i: integer;
 begin
-  currentArea.setup(mapName, RUNESCAPE_OTHER);
-  exit(self);
+  result := false;
+  for i := 0 to tries - 1 do
+    if self.useObject(color, tolerance, colorSettings, bounds, midPoint, overText) then
+      exit(true);
 end;
 
 function TEngine.walkPath(path: TPointArray; smybol: integer = -1; distance: integer = 10): boolean;
 begin
+  if length(path) = 0 then exit(true);
   result := currentArea.walkPath(path) or self.walkTo(path[high(path)]);
   if (not result) and (smybol >= 0) then
     result := self.goCloser(smybol, distance);
@@ -129,27 +173,26 @@ var
   path: TPointArray;
 begin
   p := currentArea.getPlayerPos();
-  if (p.X = -1) or (p.Y = -1) then exit(false);
+  if (p.x = -1) or (p.y = -1) or (dest.x = -1) or (dest.y = -1) then exit(false);
   dx := 20;
   dy := 20;
-  if p.X > dest.X then dx *= -1;
-  if p.Y > dest.Y then dy *= -1;
-  stepX := floor(abs((dest.X - p.X) / dx));
-  stepY := floor(abs((dest.Y - p.Y) / dy));
+  if p.x > dest.x then dx *= -1;
+  if p.y > dest.y then dy *= -1;
+  stepX := floor(abs((dest.x - p.x) / dx));
+  stepY := floor(abs((dest.y - p.y) / dy));
   if stepX < stepY then setLength(path, stepY + 1)
   else setLength(path, stepX + 1);
 
   for i := 0 to high(path) do
   begin
-    if i < stepX then p.X += dx
-    else p.X := dest.X;
-    if i < stepY then p.Y += dy
-    else p.Y := dest.Y;
+    if i < stepX then p.x += dx
+    else p.x := dest.x;
+    if i < stepY then p.y += dy
+    else p.y := dest.y;
     path[i] := Point(p.x, p.y);
   end;
   exit(currentArea.walkPath(path));
 end;
-{$ENDIF}
 
 procedure TEngine.__declarePlayers();
 var
@@ -157,7 +200,7 @@ var
 begin
   players.setup(playerForm.players);
 
-  if @self.declarePlayers <> nil then
+  if self.declarePlayers <> nil then
     self.declarePlayers();
 
   for i := 0 to high(players) do
@@ -187,12 +230,33 @@ begin
   end;
 end;
 
+function TEngine.__execute(task: TTask): boolean;
+var status: TTaskStatus;
+begin
+  wait(gaussRangeInt(0, 1200));
+  writeLn('Starting task "', task.name, '"');
+  if not self.walkPath(task.pathToTask) then exit(false);
+  status := task.tick();
+  writeLn('Task "', task.name, '" finished with status ', status);
+  exit(status > TTaskStatus.ERR);
+end;
+
+function TEngine.__execute(): boolean; overload;
+var currentTask: integer;
+var status: TTaskStatus;
+begin
+  for currentTask := 0 to high(self.__tasks) do
+    if not self.__execute(self.__tasks[currentTask]) then exit(false);
+  exit(true);
+end;
+
+
 procedure TEngine.__runLoop();
 var
   timer: TTimeMarker;
 begin
   print('TEngine.__runLoop()');
-  SRL_Events[EVENT_ANTIBAN] := @self.antiBan;
+  SRL_Events[EVENT_ANTIBAN] := self.antiBan;
   while players.getActive() > 0 do
   begin
     with players[currentPlayer] do
@@ -207,10 +271,10 @@ begin
       while isLoggedIn() and isActive and
           ((not booleans[P_TAKE_BREAKS]) or (timer.getTime() <= integers[P_NEXT_BREAK])) do
       begin
-        isActive := self.tock();
+        isActive := self.__execute();
         inc(integers[P_LOOP_COUNT]);
 
-        if @self.showProgress <> nil then
+        if self.showProgress <> nil then
           self.showProgress(integers[P_TIME_RAN] + timer.getTime());
       end;
     end;
@@ -229,19 +293,18 @@ end;
 
 function TEngine.run(): boolean;
 begin
+  if length(self.__tasks) = 0 then exit(false);
+
   self.__initForm();
   runPlayerForm();
-  if not playerForm.isScriptReady then
-    exit(false);
+  if not playerForm.isScriptReady then exit(false);
 
   self.__declarePlayers();
-  if not setupSRL() then
-    exit(false);
+  if not setupSRL() then exit(false);
 
-  {$IFDEF SMART}
+{$IFDEF SMART}
   smartEnableDrawing := true;
-  {$ENDIF}
+{$ENDIF}
   self.__runLoop();
   exit(true);
 end;
-

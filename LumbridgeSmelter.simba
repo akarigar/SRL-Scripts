@@ -1,0 +1,88 @@
+program LumbridgeSmelter;
+{$DEFINE SMART}
+{$include akarigar/engine.simba}
+
+const
+  FAIL_MAX = 20;
+
+function smithItems(): TTaskStatus;
+  var
+    i, x, y: integer;
+    timer: TTimeMarker;
+    water: TPointArray;
+  begin
+  repeat
+    findColorsSpiralTolerance(x, y, water, 12955003, mainScreen.getBounds(), 6, colorSetting(2, 0.27, 0.74));
+    writeLn(length(water));
+  until (length(water) >= 200) or (inc(i) >= FAIL_MAX);
+  if i >= FAIL_MAX then exit(TTaskStatus.ERR);
+
+  if not engine.useObject(
+    6780019, // color
+    11, // tolerance
+    colorSetting(2, 0.83, 0.40), //colorSettings
+    mainscreen.getBounds(), // bounds
+    water.getMiddle(), // midPoint
+    ['Smith', 'Anvil', 'mith', 'nvil'], // overText
+    FAIL_MAX // tries
+  ) then  exit(TTaskStatus.ERR);
+
+  while (engine.randomlyWait(500, 1000)) and (inc(i) <= FAIL_MAX) and
+        (not productionScreen.selectBox(13, ['bronze arrowheads', ' x15'])) do;
+  if (i >= FAIL_MAX) then exit(TTaskStatus.ERR);
+  i := 0;
+
+  while (engine.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < FAIL_MAX) do;
+  if i >= FAIL_MAX then exit(TTaskStatus.ERR);
+  i := 0;
+
+  timer.start();
+  while (progressScreen.isOpen(1000)) and (timer.getTime() < gaussRangeInt(110000, 130000)) do;
+  writeLn('progressScreen.isOpen ', progressScreen.isOpen());
+  if progressScreen.isOpen(1000) then exit(TTaskStatus.ERR);
+  exit(TTaskStatus.DONE);
+end;
+
+function smeltBars(): TTaskStatus;
+var i: integer = 0;
+begin
+  if not engine.useObject(
+    1121716, // color
+    13, // tolerance
+    colorSetting(2, 0.04, 0.34), // colorSettings
+    mainscreen.getBounds(), // bounds
+    Point(-1, -1), // midPoint
+    ['Smelt', 'Furnance', 'melt', 'urnance'], // overText
+    FAIL_MAX // tries
+  ) then exit(TTaskStatus.ERR);
+
+  while (engine.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < FAIL_MAX) do;
+  if (i >= FAIL_MAX) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 130000))) then
+    exit(TTaskStatus.ERR);
+  exit(TTaskStatus.DONE);
+end;
+
+function loadPreset(): TTaskStatus;
+var i: integer = 0;
+begin
+  while (engine.randomlyWait()) and (not bankscreen.open(BANK_CHEST_LUMBRIDGE)) and (inc(i) < FAIL_MAX) do;
+  if i >= FAIL_MAX then exit(TTaskStatus.ERR);
+  i := 0;
+
+  while (engine.randomlyWait()) and (not bankScreen.clickButton(BANK_BUTTON_PRESET_1)) and (inc(i) < FAIL_MAX) do;
+  if (i >= FAIL_MAX) or (not engine.randomlyWait()) or (tabBackpack.isEmpty()) then exit(TTaskStatus.ERR);
+  exit(TTaskStatus.DONE);
+end;
+
+var tasks: TTaskList;
+var smelt, bank: TTask;
+begin
+  clearDebug();
+  tasks := [
+    TTask(['Bank', [Point(102, 98)], loadPreset]),
+    TTask(['Smelt', [Point(150, 110)], smeltBars]),
+    TTask(['Smith', [Point(162, 114)], smithItems])
+  ];
+  engine.loadArea('AKARIGAR_LUMBRIDGE').setTasks(tasks).run();
+end.
+

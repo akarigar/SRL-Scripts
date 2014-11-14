@@ -1,4 +1,5 @@
 {$f-}
+{$include_once srl-6/lib/utilities/math.simba}
 
 function getGaussRangePercentage(mid: integer; percentage: extended = 0.1): integer;
 var
