@@ -3,7 +3,21 @@ program LumbridgeSmelter;
 {$include akarigar/engine.simba}
 
 const
+  // Numeric
+  P_BAR_XP = 0;
+  P_BARS_MADE = 1;
+  P_ITEM_NAME = 2;
+  P_ITEM_SLOT = 3;
+  P_ITEM_XP = 4;
+  P_ITEMS_MADE = 5;
+
+  // Booleans
+  P_SMELT = 0;
+  P_SMITH = 1;
+
   FAIL_MAX = 20;
+
+var bankTask, smeltTask, smithTask: TTask;
 
 function smithItems(): TTaskStatus;
   var
@@ -13,7 +27,6 @@ function smithItems(): TTaskStatus;
   begin
   repeat
     findColorsSpiralTolerance(x, y, water, 12955003, mainScreen.getBounds(), 6, colorSetting(2, 0.27, 0.74));
-    writeLn(length(water));
   until (length(water) >= 200) or (inc(i) >= FAIL_MAX);
   if i >= FAIL_MAX then exit(TTaskStatus.ERR);
 
@@ -38,7 +51,6 @@ function smithItems(): TTaskStatus;
 
   timer.start();
   while (progressScreen.isOpen(1000)) and (timer.getTime() < gaussRangeInt(110000, 130000)) do;
-  writeLn('progressScreen.isOpen ', progressScreen.isOpen());
   if progressScreen.isOpen(1000) then exit(TTaskStatus.ERR);
   exit(TTaskStatus.DONE);
 end;
@@ -74,15 +86,78 @@ begin
   exit(TTaskStatus.DONE);
 end;
 
+function loadTasks(): TTaskList;
 var tasks: TTaskList;
-var smelt, bank: TTask;
+begin
+  with players[currentPlayer] do
+  begin
+    tasks.append(bankTask);
+    if booleans[P_SMELT] then
+      tasks.append(smeltTask);
+    if booleans[P_SMITH] then
+      tasks.append(smithTask);
+  end;
+  exit(tasks);
+end;
+
+procedure declarePlayers();
+var i, index: integer;
+begin
+  for i := 0 to high(players) do
+    with playerForm.players[i] do
+    begin
+      index := -1;
+      players[i].extendeds[P_BAR_XP] := strToFloat(settings[inc(index)]);
+      players[i].extendeds[P_ITEM_XP] := strToFloat(settings[inc(index)]);
+      players[i].integers[P_ITEM_SLOT] := strToInt(settings[inc(index)]);
+
+      players[i].strings[P_ITEM_NAME] := settings[inc(index)];
+
+      index := high(playerForm.editBoxLabels);
+      players[i].booleans[P_SMELT] := strToBool(settings[inc(index)]);
+      players[i].booleans[P_SMITH] := strToBool(settings[inc(index)]);
+      if not (players[i].booleans[P_SMELT] or players[i].booleans[P_SMITH]) then
+        terminateScript();
+    end;
+end;
+
+procedure initPlayerForm();
+begin
+  with playerForm do
+  begin
+    name := 'Lumbridge Smelter & Smither';
+
+    // Setup edit boxes
+    editBoxLabels := ['XP per bar', 'XP per item', 'Item slot', 'Item name'];
+    editBoxDefaults := ['6.2', '12.5', '13', 'arrowheads'];
+    editBoxHints := [
+      'The XP gained by smelting one bar.',
+      'The XP gained by smithing one item.',
+      'The slot number in the production screen for the item you want to make.',
+      'The name of the item you want to make. Omit the type (bronze, rune).'
+    ];
+
+    // Setup check boxes
+    checkBoxLabels := ['Smelt?', 'Smith?'];
+    checkBoxDefaults := ['True', 'True'];
+    checkBoxHints := [
+      'Should I smelt ore into bars?',
+      'Should I smith (after smelting, if applicable) bars into items?'
+    ];
+  end;
+end;
+
 begin
   clearDebug();
-  tasks := [
-    TTask(['Bank', [Point(102, 98)], loadPreset]),
-    TTask(['Smelt', [Point(150, 110)], smeltBars]),
-    TTask(['Smith', [Point(162, 114)], smithItems])
-  ];
-  engine.loadArea('AKARIGAR_LUMBRIDGE').setTasks(tasks).run();
-end.
 
+  bankTask := TTask(['Bank', [Point(102, 98)], loadPreset]);
+  smeltTask := TTask(['Smelt', [Point(150, 110)], smeltBars]);
+  smithTask := TTask(['Smith', [Point(162, 114)], smithItems]);
+
+  initPlayerForm();
+  engine
+    .loadArea('AKARIGAR_LUMBRIDGE')
+    .setDeclarePlayers(declarePlayers)
+    .setTaskLoader(loadTasks)
+    .run();
+end.

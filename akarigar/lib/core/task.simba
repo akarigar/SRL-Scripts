@@ -19,5 +19,10 @@ begin
   self[high(self)] := task;
 end;
 
+function TTaskList.size(): integer;
+begin
+  exit(length(self));
+end;
+
 {$f+}
 

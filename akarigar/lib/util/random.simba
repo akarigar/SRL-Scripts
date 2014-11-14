@@ -1,12 +1,11 @@
-{$f-}
 {$include_once srl-6/lib/utilities/math.simba}
+{$f-}
 
-function getGaussRangePercentage(mid: integer; percentage: extended = 0.1): integer;
-var
-  delta: extended;
+function getGaussRangePercentage(value: integer; percentage: extended = 0.1): integer;
+var delta: integer;
 begin
-  delta := mid * percentage;
-  exit(gaussRangeInt(round(mid - delta), round(mid + delta)));
+  delta := round(value * percentage);
+  exit(gaussRangeInt(value - delta, value + delta));
 end;
 
 {$f+}

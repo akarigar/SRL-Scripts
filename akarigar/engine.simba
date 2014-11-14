@@ -22,7 +22,7 @@ const
 type TEngine = record
   antiBan, declarePlayers: procedure();
   showProgress: procedure(timeRan: integer);
-  __tasks: TTaskList;
+  loadTasks: function(): TTaskList;
 end;
 
 var
@@ -42,9 +42,9 @@ begin
   exit(self);
 end;
 
-function TEngine.setTasks(tasks: TTaskList): TEngine;
+function TEngine.setTaskLoader(loadTasks: function(): TTaskList): TEngine;
 begin
-  self.__tasks := tasks;
+  self.loadTasks := loadTasks;
   exit(self);
 end;
 // End Setters =================================================================
@@ -204,15 +204,16 @@ begin
     self.declarePlayers();
 
   for i := 0 to high(players) do
-    with players[i], playerForm.players[i] do
+    with playerForm.players[i] do
     begin
-      integers[P_PLAY_TIME] := strToInt(settings[high(playerForm.editBoxLabels) - 1]) * 60000;
-      integers[P_BREAK_LENGTH] := strToInt(settings[high(playerForm.editBoxLabels)]) * 60000;
-      booleans[P_TAKE_BREAKS] := strToBool(settings[high(settings)]);
+      players[i].world := strToInt(settings[high(playerForm.editBoxLabels) - 2]);
+      players[i].integers[P_PLAY_TIME] := strToInt(settings[high(playerForm.editBoxLabels) - 1]) * 60000;
+      players[i].integers[P_BREAK_LENGTH] := strToInt(settings[high(playerForm.editBoxLabels)]) * 60000;
+      players[i].booleans[P_TAKE_BREAKS] := strToBool(settings[high(settings)]);
 
       // Set up the time for the next break, if we are taking breaks.
-      if booleans[P_TAKE_BREAKS] then
-        integers[P_NEXT_BREAK] := getGaussRangePercentage(integers[P_PLAY_TIME], 0.2);
+      if players[i].booleans[P_TAKE_BREAKS] then
+        players[i].integers[P_NEXT_BREAK] := getGaussRangePercentage(players[i].integers[P_PLAY_TIME], 0.2);
     end;
 end;
 
@@ -220,9 +221,13 @@ procedure TEngine.__initForm();
 begin
   with playerForm do
   begin
-    editBoxLabels.combine(['Take a break around (mins)', 'Duration of break (mins)']);
-    editBoxDefaults.combine(['60', '5']);
-    editBoxHints.combine(['Around how long to run before taking a break?', 'Around how long should the break be?']);
+    editBoxLabels.combine(['World', 'Take a break around (mins)', 'Duration of break (mins)']);
+    editBoxDefaults.combine(['-1', '60', '5']);
+    editBoxHints.combine([
+      'What world to use? (-1 means use current, 0 means use random',
+      'Around how long to run before taking a break?',
+      'Around how long should the break be?'
+    ]);
 
     checkBoxLabels.combine(['Take Breaks']);
     checkBoxDefaults.combine(['True']);
@@ -231,7 +236,9 @@ begin
 end;
 
 function TEngine.__execute(task: TTask): boolean;
-var status: TTaskStatus;
+var
+  status: TTaskStatus;
+  tasks: TTaskList;
 begin
   wait(gaussRangeInt(0, 1200));
   writeLn('Starting task "', task.name, '"');
@@ -241,29 +248,38 @@ begin
   exit(status > TTaskStatus.ERR);
 end;
 
-function TEngine.__execute(): boolean; overload;
+function TEngine.__execute(tasks: TTaskList): boolean; overload;
 var currentTask: integer;
-var status: TTaskStatus;
 begin
-  for currentTask := 0 to high(self.__tasks) do
-    if not self.__execute(self.__tasks[currentTask]) then exit(false);
+  for currentTask := 0 to high(tasks) do
+    if not self.__execute(tasks[currentTask]) then exit(false);
   exit(true);
 end;
 
-
 procedure TEngine.__runLoop();
 var
+  currentTasks: TTaskList;
   timer: TTimeMarker;
 begin
   print('TEngine.__runLoop()');
   SRL_Events[EVENT_ANTIBAN] := self.antiBan;
   while players.getActive() > 0 do
   begin
+    // Set up the tasks for current player
+    currentTasks := self.loadTasks();
+    if currentTasks.size() = 0 then
+    begin
+      writeLn('No tasks loaded for ', players[currentPlayer].nickname);
+      if isLoggedIn() then players[currentPlayer].logout();
+      players[currentPlayer].isActive := false;
+      if players.getActive() > 0 then players.randomNext(false);
+      continue;
+    end;
+
     with players[currentPlayer] do
     begin
       timer.start();
-      if not isLoggedIn() then
-        login();
+      if not isLoggedIn() then login();
       closeAdWindow();
       closePollWindow();
       exitTreasure();
@@ -271,7 +287,7 @@ begin
       while isLoggedIn() and isActive and
           ((not booleans[P_TAKE_BREAKS]) or (timer.getTime() <= integers[P_NEXT_BREAK])) do
       begin
-        isActive := self.__execute();
+        isActive := self.__execute(currentTasks);
         inc(integers[P_LOOP_COUNT]);
 
         if self.showProgress <> nil then
@@ -293,7 +309,7 @@ end;
 
 function TEngine.run(): boolean;
 begin
-  if length(self.__tasks) = 0 then exit(false);
+  if self.loadTasks = nil then exit(false);
 
   self.__initForm();
   runPlayerForm();
