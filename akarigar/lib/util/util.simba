@@ -1,0 +1,21 @@
+{$include_once srl-6/lib/utilities/math.simba}
+{$f-}
+
+function getGaussRangePercentage(value: integer; percentage: extended = 0.1): integer;
+var delta: integer;
+begin
+  delta := round(value * percentage);
+  exit(gaussRangeInt(value - delta, value + delta));
+end;
+
+function getHourlyRate(total, totalTime: LongWord): integer;
+begin
+  exit(round(total * (3600 / (totalTime / 1000))));
+end;
+
+function formatProgressLine(prefix: string; value, totalTime: integer): string;
+begin
+  exit(prefix + intToStr(value) + ' (' + intToStr(getHourlyRate(value, totalTime)) + '/hr)');
+end;
+
+{$f+}

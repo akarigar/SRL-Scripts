@@ -3,7 +3,7 @@
 {$include_once SPS/lib/sps-rs3.simba}
 
 {$include_once lib/core/task.simba}
-{$include_once lib/util/random.simba}
+{$include_once lib/util/util.simba}
 {$f-}
 
 const
@@ -21,7 +21,7 @@ const
 
 type TEngine = record
   antiBan, declarePlayers: procedure();
-  showProgress: procedure(timeRan: integer);
+  printProgress: procedure(timeRan: integer);
   loadTasks: function(): TTaskList;
 end;
 
@@ -39,6 +39,12 @@ end;
 function TEngine.setDeclarePlayers(declarePlayers: procedure()): TEngine;
 begin
   self.declarePlayers := declarePlayers;
+  exit(self);
+end;
+
+function TEngine.setProgressPrinter(printProgress: procedure(timeRan: integer)): TEngine;
+begin
+  self.printProgress := printProgress;
   exit(self);
 end;
 
@@ -290,8 +296,8 @@ begin
         isActive := self.__execute(currentTasks);
         inc(integers[P_LOOP_COUNT]);
 
-        if self.showProgress <> nil then
-          self.showProgress(integers[P_TIME_RAN] + timer.getTime());
+        if self.printProgress <> nil then
+          self.printProgress(integers[P_TIME_RAN] + timer.getTime());
       end;
     end;
     inc(players[currentPlayer].integers[P_TIME_RAN], timer.getTime());

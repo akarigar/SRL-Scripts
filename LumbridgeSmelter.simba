@@ -1,6 +1,7 @@
 program LumbridgeSmelter;
 {$DEFINE SMART}
 {$include akarigar/engine.simba}
+{$ContinueCase ON}
 
 const
   // Numeric
@@ -19,9 +20,33 @@ const
 
 var bankTask, smeltTask, smithTask: TTask;
 
+procedure doAntiBan();
+begin
+  case Random(600) of
+    1..10: sleepAndMoveMouse(randomRange(150, 1000));
+    11..20:
+    begin
+      if random() > 0.75 then hoverSkill(SKILL_SMITHING)
+      else hoverRandomSkill();
+      continue;
+    end;
+    21..35:
+    begin
+      if random() > 0.5 then pickupMouse();
+      smallRandomMouse(gaussRangeInt(400, 1200));
+      wait(randomRange(500, 1000));
+    end;
+    36..150: if not minimap.isPlayerMoving() then mouseOffClient(OFF_CLIENT_RANDOM);
+  end;
+  if progressScreen.isOpen(500) then
+    wait(gaussRangeInt(500, 3000))
+  else
+    wait(gaussRangeInt(0, 750));
+end;
+
 function smithItems(): TTaskStatus;
   var
-    i, x, y: integer;
+    i, x, y, barsCount: integer;
     timer: TTimeMarker;
     water: TPointArray;
   begin
@@ -29,6 +54,7 @@ function smithItems(): TTaskStatus;
     findColorsSpiralTolerance(x, y, water, 12955003, mainScreen.getBounds(), 6, colorSetting(2, 0.27, 0.74));
   until (length(water) >= 200) or (inc(i) >= FAIL_MAX);
   if i >= FAIL_MAX then exit(TTaskStatus.ERR);
+  barsCount := tabBackpack.count();
 
   if not engine.useObject(
     6780019, // color
@@ -50,8 +76,15 @@ function smithItems(): TTaskStatus;
   i := 0;
 
   timer.start();
-  while (progressScreen.isOpen(1000)) and (timer.getTime() < gaussRangeInt(110000, 130000)) do;
-  if progressScreen.isOpen(1000) then exit(TTaskStatus.ERR);
+  while (progressScreen.isOpen(1500)) and (timer.getTime() < gaussRangeInt(110000, 130000)) do
+    doAntiBan();
+  if progressScreen.isOpen() then exit(TTaskStatus.ERR);
+
+  // If we're making stackable items, then we get one item per bar.
+  if findColor(x, y, 65535, tabBackpack.getBounds()) then
+    inc(players[currentPlayer].integers[P_ITEMS_MADE], barsCount)
+  else
+    inc(players[currentPlayer].integers[P_ITEMS_MADE], tabBackpack.count());
   exit(TTaskStatus.DONE);
 end;
 
@@ -68,9 +101,12 @@ begin
     FAIL_MAX // tries
   ) then exit(TTaskStatus.ERR);
 
+
   while (engine.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < FAIL_MAX) do;
   if (i >= FAIL_MAX) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 130000))) then
     exit(TTaskStatus.ERR);
+
+  inc(players[currentPlayer].integers[P_BARS_MADE], tabBackpack.count());
   exit(TTaskStatus.DONE);
 end;
 
@@ -147,6 +183,41 @@ begin
   end;
 end;
 
+procedure showProgress(timeRan: integer);
+var smeltCount, smeltXp, smithCount, smithXp, totalXp: integer = 0;
+begin
+  with players[currentPlayer] do
+  begin
+    writeLn('================================================================');
+    writeLn('Lumbridge Smelter & Smither Progress Report');
+    writeLn('Player[', currentPlayer, ']: ', nickname);
+    writeLn('Played for ', msToTime(timeRan, TIME_FORMAL));
+    writeLn('Breaked for ', msToTime(integers[P_TIME_BREAKED], TIME_FORMAL),' (',
+            integers[P_BREAK_COUNT], ' breaks)');
+
+    if booleans[P_SMELT] then
+    begin
+      smeltCount := integers[P_BARS_MADE];
+      smeltXp := round(smeltCount * extendeds[P_BAR_XP]);
+      totalXp += smeltXp;
+      writeLn(formatProgressLine('Bars smelted: ', smeltCount, timeRan));
+      writeLn(formatProgressLine('XP from smelting: ', smeltXp, timeRan));
+    end;
+
+    if booleans[P_SMITH] then
+    begin
+      smithCount := integers[P_ITEMS_MADE];
+      smithXp := round(smithCount * extendeds[P_ITEM_XP]);
+      totalXp += smithXp;
+      writeLn(formatProgressLine('Items smithed: ', smithCount, timeRan));
+      writeLn(formatProgressLine('XP from smithing: ', smithXp, timeRan));
+    end;
+
+    writeLn(formatProgressLine('Total XP: ', totalXp, timeRan));
+    writeLn('================================================================');
+  end;
+end;
+
 begin
   clearDebug();
 
@@ -157,7 +228,9 @@ begin
   initPlayerForm();
   engine
     .loadArea('AKARIGAR_LUMBRIDGE')
+    .setAntiBan(doAntiBan)
     .setDeclarePlayers(declarePlayers)
+    .setProgressPrinter(showProgress)
     .setTaskLoader(loadTasks)
     .run();
 end.
