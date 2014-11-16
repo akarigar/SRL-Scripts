@@ -1,5 +1,11 @@
 {$f-}
 
+{
+  In the future, the idea is to be able to load most of the task's data from
+  some local or hosted db. So, things like relevant colors, xp tables etc can
+  be created based on location or the name of the item being gained.
+}
+
 type TTaskStatus = (
   ERR,
   DONE
@@ -7,16 +13,55 @@ type TTaskStatus = (
 
 type TTask = record
   name: string;
+  location, tries, itemsGained: integer;
+  xpPerItem: extended;
   pathToTask: TPointArray;
-  tick: function(): TTaskStatus;
+  run: function(): TTaskStatus of object;
 end;
 
-type TTaskList = array of TTask;
+type PTask = ^TTask;
 
-procedure TTaskList.append(task: TTask);
+procedure TTask.init(
+  name: string;
+  location, tries: integer;
+  xpPerItem: extended;
+  pathToTask: TPointArray;
+  run: function(): TTaskStatus of object = nil
+);
+begin
+  self.name := name;
+  self.location := location;
+  self.tries := tries;
+  self.itemsGained := 0;
+  self.xpPerItem := xpPerItem;
+  self.pathToTask := pathToTask;
+  self.run := run;
+end;
+
+type TTaskList = array of PTask;
+
+procedure TTaskList.append(task: PTask);
 begin
   setLength(self, length(self) + 1);
   self[high(self)] := task;
+end;
+
+procedure TTaskList.clear();
+var i: integer;
+begin
+  for i := 0 to high(self) do
+    dispose(self[i]);
+  setLength(self, 0);
+end;
+
+function TTaskList.get(index: integer): TTask;
+begin
+  exit(self[index]^);
+end;
+
+function TTaskList.isEmpty(): boolean;
+begin
+  exit(self.size() = 0);
 end;
 
 function TTaskList.size(): integer;
@@ -25,4 +70,3 @@ begin
 end;
 
 {$f+}
-

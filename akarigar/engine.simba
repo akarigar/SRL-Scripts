@@ -6,6 +6,12 @@
 {$include_once lib/util/util.simba}
 {$f-}
 
+{ This is just a very initial design, it is missing some key things
+  (like dependency, biometrics, etc). Much of the stuff here is still not
+  finalized. I'm going to be adding things as needed. I'll be moving things out
+  of this and making their own files as they become big.
+}
+
 const
   // Integers
   P_BREAK_COUNT := 99;
@@ -21,12 +27,13 @@ const
 
 type TEngine = record
   antiBan, declarePlayers: procedure();
-  printProgress: procedure(timeRan: integer);
   loadTasks: function(): TTaskList;
+
+  __currentTasks: TTaskList;
 end;
 
 var
-  engine: TEngine;
+  engine: TEngine = [nil, nil, nil, nil];
   currentArea: TSPSArea;
 
 // Setters =====================================================================
@@ -39,12 +46,6 @@ end;
 function TEngine.setDeclarePlayers(declarePlayers: procedure()): TEngine;
 begin
   self.declarePlayers := declarePlayers;
-  exit(self);
-end;
-
-function TEngine.setProgressPrinter(printProgress: procedure(timeRan: integer)): TEngine;
-begin
-  self.printProgress := printProgress;
   exit(self);
 end;
 
@@ -180,8 +181,7 @@ var
 begin
   p := currentArea.getPlayerPos();
   if (p.x = -1) or (p.y = -1) or (dest.x = -1) or (dest.y = -1) then exit(false);
-  dx := 20;
-  dy := 20;
+  dx := dy := 20;
   if p.x > dest.x then dx *= -1;
   if p.y > dest.y then dy *= -1;
   stepX := floor(abs((dest.x - p.x) / dx));
@@ -223,6 +223,33 @@ begin
     end;
 end;
 
+procedure TEngine.__destroy();
+begin
+  // Just in case someone exits the script prematurely.
+  self.__currentTasks.clear();
+end;
+
+function TEngine.__execute(task: TTask): boolean;
+var
+  status: TTaskStatus;
+  tasks: TTaskList;
+begin
+  wait(gaussRangeInt(0, 1200));
+  writeLn('Starting task "', task.name, '"');
+  if not self.walkPath(task.pathToTask) then exit(false);
+  status := task.run();
+  writeLn('Task "', task.name, '" finished with status ', status);
+  exit(status > TTaskStatus.ERR);
+end;
+
+function TEngine.__execute(tasks: TTaskList): boolean; overload;
+var currentTask: integer;
+begin
+  for currentTask := 0 to high(tasks) do
+    if not self.__execute(tasks.get(currentTask)) then exit(false);
+  exit(true);
+end;
+
 procedure TEngine.__initForm();
 begin
   with playerForm do
@@ -241,39 +268,57 @@ begin
   end;
 end;
 
-function TEngine.__execute(task: TTask): boolean;
+procedure TEngine.printProgress(timeRan: integer);
 var
-  status: TTaskStatus;
-  tasks: TTaskList;
+  i: integer;
+  totalXp: extended = 0;
+  task: PTask;
 begin
-  wait(gaussRangeInt(0, 1200));
-  writeLn('Starting task "', task.name, '"');
-  if not self.walkPath(task.pathToTask) then exit(false);
-  status := task.tick();
-  writeLn('Task "', task.name, '" finished with status ', status);
-  exit(status > TTaskStatus.ERR);
-end;
+  with players[currentPlayer] do
+  begin
+    writeLn('================================================================');
+    if length(playerForm.name) = 0 then
+      writeLn('Progress Report')
+    else
+      writeLn(playerForm.name, ' Progress Report');
+    writeLn('Player[', currentPlayer, ']: ', nickname);
+    writeLn('Played for ', msToTime(timeRan, TIME_FORMAL));
+    writeLn('Breaked for ', msToTime(integers[P_TIME_BREAKED], TIME_FORMAL),' (',
+            integers[P_BREAK_COUNT], ' breaks)');
 
-function TEngine.__execute(tasks: TTaskList): boolean; overload;
-var currentTask: integer;
-begin
-  for currentTask := 0 to high(tasks) do
-    if not self.__execute(tasks[currentTask]) then exit(false);
-  exit(true);
+    for i := 0 to high(self.__currentTasks) do
+    begin
+      task := self.__currentTasks[i];
+      if task^.xpPerItem <= 0 then continue;
+
+      writeLn(formatProgressLine(
+        'Items gained from ' + task^.name + ': ',
+        task^.itemsGained,
+        timeRan
+      ));
+      writeLn(formatProgressLine(
+        'XP gained from ' + task^.name + ': ',
+        round(task^.xpPerItem * task^.itemsGained),
+        timeRan
+      ));
+      totalXp += task^.xpPerItem * task^.itemsGained;
+    end;
+
+    writeLn(formatProgressLine('Total XP: ', round(totalXp), timeRan));
+    writeLn('================================================================');
+  end;
 end;
 
 procedure TEngine.__runLoop();
-var
-  currentTasks: TTaskList;
-  timer: TTimeMarker;
+var timer: TTimeMarker;
 begin
   print('TEngine.__runLoop()');
   SRL_Events[EVENT_ANTIBAN] := self.antiBan;
   while players.getActive() > 0 do
   begin
     // Set up the tasks for current player
-    currentTasks := self.loadTasks();
-    if currentTasks.size() = 0 then
+    self.__currentTasks := self.loadTasks();
+    if self.__currentTasks.isEmpty() then
     begin
       writeLn('No tasks loaded for ', players[currentPlayer].nickname);
       if isLoggedIn() then players[currentPlayer].logout();
@@ -286,18 +331,19 @@ begin
     begin
       timer.start();
       if not isLoggedIn() then login();
+      wait(Random(1000, 2000));
       closeAdWindow();
       closePollWindow();
       exitTreasure();
+      mainscreen.setAngle(MS_ANGLE_HIGH);
 
       while isLoggedIn() and isActive and
           ((not booleans[P_TAKE_BREAKS]) or (timer.getTime() <= integers[P_NEXT_BREAK])) do
       begin
-        isActive := self.__execute(currentTasks);
+        isActive := self.__execute(self.__currentTasks);
         inc(integers[P_LOOP_COUNT]);
 
-        if self.printProgress <> nil then
-          self.printProgress(integers[P_TIME_RAN] + timer.getTime());
+        self.printProgress(integers[P_TIME_RAN] + timer.getTime());
       end;
     end;
     inc(players[currentPlayer].integers[P_TIME_RAN], timer.getTime());
@@ -310,6 +356,7 @@ begin
     if isLoggedIn() then
       players[currentPlayer].logout();
     timer.reset();
+    self.__currentTasks.clear();
   end;
 end;
 
@@ -327,6 +374,12 @@ begin
 {$IFDEF SMART}
   smartEnableDrawing := true;
 {$ENDIF}
+  addOnTerminate('destroyEngine');
   self.__runLoop();
   exit(true);
+end;
+
+procedure destroyEngine();
+begin
+  engine.__destroy();
 end;

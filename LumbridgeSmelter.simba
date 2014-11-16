@@ -1,7 +1,12 @@
 program LumbridgeSmelter;
 {$DEFINE SMART}
-{$include akarigar/engine.simba}
+{$i akarigar/engine.simba}
+
+{$i akarigar/lib/tasks/TBankTask.simba}
+{$i akarigar/lib/tasks/TSmeltTask.simba}
+{$i akarigar/lib/tasks/TSmithTask.simba}
 {$ContinueCase ON}
+{$f-}
 
 const
   // Numeric
@@ -18,7 +23,7 @@ const
 
   FAIL_MAX = 20;
 
-var bankTask, smeltTask, smithTask: TTask;
+var gBankTask: ^TBankTask;
 
 procedure doAntiBan();
 begin
@@ -44,72 +49,6 @@ begin
     wait(gaussRangeInt(0, 750));
 end;
 
-function smithItems(): TTaskStatus;
-  var
-    i, x, y, barsCount: integer;
-    timer: TTimeMarker;
-    water: TPointArray;
-  begin
-  repeat
-    findColorsSpiralTolerance(x, y, water, 12955003, mainScreen.getBounds(), 6, colorSetting(2, 0.27, 0.74));
-  until (length(water) >= 200) or (inc(i) >= FAIL_MAX);
-  if i >= FAIL_MAX then exit(TTaskStatus.ERR);
-  barsCount := tabBackpack.count();
-
-  if not engine.useObject(
-    6780019, // color
-    11, // tolerance
-    colorSetting(2, 0.83, 0.40), //colorSettings
-    mainscreen.getBounds(), // bounds
-    water.getMiddle(), // midPoint
-    ['Smith', 'Anvil', 'mith', 'nvil'], // overText
-    FAIL_MAX // tries
-  ) then  exit(TTaskStatus.ERR);
-
-  while (engine.randomlyWait(500, 1000)) and (inc(i) <= FAIL_MAX) and
-        (not productionScreen.selectBox(13, ['bronze arrowheads', ' x15'])) do;
-  if (i >= FAIL_MAX) then exit(TTaskStatus.ERR);
-  i := 0;
-
-  while (engine.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < FAIL_MAX) do;
-  if i >= FAIL_MAX then exit(TTaskStatus.ERR);
-  i := 0;
-
-  timer.start();
-  while (progressScreen.isOpen(1500)) and (timer.getTime() < gaussRangeInt(110000, 130000)) do
-    doAntiBan();
-  if progressScreen.isOpen() then exit(TTaskStatus.ERR);
-
-  // If we're making stackable items, then we get one item per bar.
-  if findColor(x, y, 65535, tabBackpack.getBounds()) then
-    inc(players[currentPlayer].integers[P_ITEMS_MADE], barsCount)
-  else
-    inc(players[currentPlayer].integers[P_ITEMS_MADE], tabBackpack.count());
-  exit(TTaskStatus.DONE);
-end;
-
-function smeltBars(): TTaskStatus;
-var i: integer = 0;
-begin
-  if not engine.useObject(
-    1121716, // color
-    13, // tolerance
-    colorSetting(2, 0.04, 0.34), // colorSettings
-    mainscreen.getBounds(), // bounds
-    Point(-1, -1), // midPoint
-    ['Smelt', 'Furnance', 'melt', 'urnance'], // overText
-    FAIL_MAX // tries
-  ) then exit(TTaskStatus.ERR);
-
-
-  while (engine.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < FAIL_MAX) do;
-  if (i >= FAIL_MAX) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 130000))) then
-    exit(TTaskStatus.ERR);
-
-  inc(players[currentPlayer].integers[P_BARS_MADE], tabBackpack.count());
-  exit(TTaskStatus.DONE);
-end;
-
 function loadPreset(): TTaskStatus;
 var i: integer = 0;
 begin
@@ -127,11 +66,25 @@ var tasks: TTaskList;
 begin
   with players[currentPlayer] do
   begin
-    tasks.append(bankTask);
+    tasks.append(gBankTask);
+
     if booleans[P_SMELT] then
-      tasks.append(smeltTask);
+      tasks.append(SmeltTask(
+        gBankTask^.location,
+        FAIL_MAX,
+        extendeds[P_BAR_XP],
+        [Point(150, 110)]
+      ));
+
     if booleans[P_SMITH] then
-      tasks.append(smithTask);
+      tasks.append(SmithTask(
+        gBankTask^.location,
+        FAIL_MAX,
+        integers[P_ITEM_SLOT],
+        strings[P_ITEM_NAME],
+        extendeds[P_ITEM_XP],
+        [Point(162, 114)]
+      ));
   end;
   exit(tasks);
 end;
@@ -165,7 +118,7 @@ begin
 
     // Setup edit boxes
     editBoxLabels := ['XP per bar', 'XP per item', 'Item slot', 'Item name'];
-    editBoxDefaults := ['6.2', '12.5', '13', 'arrowheads'];
+    editBoxDefaults := ['6.25', '12.5', '13', 'arrowheads'];
     editBoxHints := [
       'The XP gained by smelting one bar.',
       'The XP gained by smithing one item.',
@@ -183,54 +136,21 @@ begin
   end;
 end;
 
-procedure showProgress(timeRan: integer);
-var smeltCount, smeltXp, smithCount, smithXp, totalXp: integer = 0;
-begin
-  with players[currentPlayer] do
-  begin
-    writeLn('================================================================');
-    writeLn('Lumbridge Smelter & Smither Progress Report');
-    writeLn('Player[', currentPlayer, ']: ', nickname);
-    writeLn('Played for ', msToTime(timeRan, TIME_FORMAL));
-    writeLn('Breaked for ', msToTime(integers[P_TIME_BREAKED], TIME_FORMAL),' (',
-            integers[P_BREAK_COUNT], ' breaks)');
-
-    if booleans[P_SMELT] then
-    begin
-      smeltCount := integers[P_BARS_MADE];
-      smeltXp := round(smeltCount * extendeds[P_BAR_XP]);
-      totalXp += smeltXp;
-      writeLn(formatProgressLine('Bars smelted: ', smeltCount, timeRan));
-      writeLn(formatProgressLine('XP from smelting: ', smeltXp, timeRan));
-    end;
-
-    if booleans[P_SMITH] then
-    begin
-      smithCount := integers[P_ITEMS_MADE];
-      smithXp := round(smithCount * extendeds[P_ITEM_XP]);
-      totalXp += smithXp;
-      writeLn(formatProgressLine('Items smithed: ', smithCount, timeRan));
-      writeLn(formatProgressLine('XP from smithing: ', smithXp, timeRan));
-    end;
-
-    writeLn(formatProgressLine('Total XP: ', totalXp, timeRan));
-    writeLn('================================================================');
-  end;
-end;
-
 begin
   clearDebug();
 
-  bankTask := TTask(['Bank', [Point(102, 98)], loadPreset]);
-  smeltTask := TTask(['Smelt', [Point(150, 110)], smeltBars]);
-  smithTask := TTask(['Smith', [Point(162, 114)], smithItems]);
+  gBankTask := BankTask(
+    LOCATION_LUMBRIDGE,
+    FAIL_MAX,
+    BANK_BUTTON_PRESET_1,
+    [Point(102, 98)]
+  );
 
   initPlayerForm();
   engine
     .loadArea('AKARIGAR_LUMBRIDGE')
     .setAntiBan(doAntiBan)
     .setDeclarePlayers(declarePlayers)
-    .setProgressPrinter(showProgress)
     .setTaskLoader(loadTasks)
     .run();
 end.

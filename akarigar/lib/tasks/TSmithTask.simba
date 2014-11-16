@@ -1,0 +1,68 @@
+{$include_once ../../engine.simba}
+{$f-}
+
+type TSmithTask = record(TTask)
+  slot: integer;
+  itemText: string;
+end;
+
+function TSmithTask.__smith(): TTaskStatus;
+var
+  i, x, y, barsCount: integer;
+  timer: TTimeMarker;
+  water: TPointArray;
+begin
+  repeat
+    findColorsSpiralTolerance(x, y, water, 12955003, mainScreen.getBounds(), 6, colorSetting(2, 0.27, 0.74));
+  until (length(water) >= 200) or (inc(i) >= self.tries);
+  if i >= self.tries then exit(TTaskStatus.ERR);
+  barsCount := tabBackpack.count();
+
+  if not engine.useObject(
+    6780019, // color
+    11, // tolerance
+    colorSetting(2, 0.83, 0.40), //colorSettings
+    mainscreen.getBounds(), // bounds
+    water.getMiddle(), // midPoint
+    ['Smith', 'Anvil', 'mith', 'nvil'], // overText
+    self.tries // tries
+  ) then exit(TTaskStatus.ERR);
+
+  while (engine.randomlyWait(500, 1000)) and (inc(i) <= self.tries) and
+        (not productionScreen.selectBox(self.slot, [self.itemText])) do;
+  if (i >= self.tries) then exit(TTaskStatus.ERR);
+  i := 0;
+
+  while (engine.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
+  if i >= self.tries then exit(TTaskStatus.ERR);
+  i := 0;
+
+  timer.start();
+  while (progressScreen.isOpen(1500)) and (timer.getTime() < gaussRangeInt(110000, 130000)) do
+    ;//doAntiBan(); // TODO: Add a way to do anti ban in engine.
+  if progressScreen.isOpen() then exit(TTaskStatus.ERR);
+
+  // If we're making stackable items, then we get one item per bar.
+  if findColor(x, y, 65535, tabBackpack.getBounds()) then
+    inc(self.itemsGained, barsCount)
+  else
+    inc(self.itemsGained, tabBackpack.count());
+  exit(TTaskStatus.DONE);
+end;
+
+function SmithTask(
+  location, tries, slot: integer;
+  itemText: string;
+  xpPerItem: extended;
+  pathToTask: TPointArray
+): ^TSmithTask;
+var task: ^TSmithTask;
+begin
+  new(task);
+  task^.init('Smith', location, tries, xpPerItem, pathToTask, task^.__smith);
+  task^.slot := slot;
+  task^.itemText := itemText;
+  exit(task);
+end;
+
+{$f+}

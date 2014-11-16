@@ -1,0 +1,40 @@
+{$include_once ../../engine.simba}
+{$f-}
+
+type TBankTask = record(TTask)
+  bankType, button: integer;
+end;
+
+function TBankTask.__loadPreset(): TTaskStatus;
+var i: integer = 0;
+begin
+  while (engine.randomlyWait()) and (not bankscreen.open(self.bankType)) and (inc(i) < self.tries) do;
+  if i >= self.tries then exit(TTaskStatus.ERR);
+  i := 0;
+
+  while (engine.randomlyWait()) and (not bankScreen.clickButton(self.button)) and (inc(i) < self.tries) do;
+  if (i >= self.tries) or (not engine.randomlyWait()) or (tabBackpack.isEmpty()) then
+    exit(TTaskStatus.ERR);
+  exit(TTaskStatus.DONE);
+end;
+
+function BankTask(
+  location, tries, button: integer;
+  pathToBank: TPointArray
+): ^TBankTask;
+var task: ^TBankTask;
+begin
+  new(task);writeLn('before init');
+  writeLn(@(task^));
+  task^.init('Bank', location, tries, 0, pathToBank, task^.__loadPreset);
+  task^.button := button;
+
+  case location of
+    LOCATION_LUMBRIDGE: task^.bankType := BANK_CHEST_LUMBRIDGE;
+    else task^.bankType := BANK_BOOTH;
+  end;
+
+  exit(task);
+end;
+
+{$f+}
