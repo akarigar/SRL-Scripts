@@ -33,7 +33,7 @@ type TEngine = record
 end;
 
 var
-  engine: TEngine = [nil, nil, nil, nil];
+  engine: TEngine = [nil, nil, nil, []];
   currentArea: TSPSArea;
 
 // Setters =====================================================================

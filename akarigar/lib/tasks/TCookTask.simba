@@ -1,0 +1,54 @@
+{$include_once ../../engine.simba}
+{$f-}
+
+type TCookTask = record(TTask)
+  itemsBurned: integer;
+end;
+
+function TCookTask.__cook(): TTaskStatus;
+var i, x, y, rawCount: Integer = 0;
+begin
+  rawCount := tabBackpack.count();
+  if not engine.useObject(
+    2451907, // color
+    4, // tolerance
+    colorSetting(2, 0.35, 1.71), // colorSettings
+    mainscreen.getBounds(), // bounds
+    Point(-1, -1), // midPoint
+    ['Cook-at', 'ook', '-at', 'range'], // overText
+    self.tries // tries
+  ) then exit(TTaskStatus.ERR);
+
+  while (engine.randomlyWait(1000, 1500)) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
+  if (i >= self.tries) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 1300000)))
+    then exit(TTaskStatus.ERR);
+
+  inc(self.itemsBurned, rawCount - tabBackpack.count());
+  inc(self.itemsGained, tabBackpack.count());
+  if findColor(x, y, 65535, tabBackpack.getBounds()) then
+  begin
+    inc(self.itemsBurned);
+    dec(self.itemsGained);
+  end;
+
+  {if (area.location = LOCATION_LUMBRIDGE) and (Random() > 0.75) and (randomlyWait()) and
+      (tabStats.getSkillLevel(SKILL_COOKING) >= players[currentPlayer].integers[P_SAFE_LEVEL]) then
+     Exit(area.loadLocation(LOCATION_AL_KHARID));
+  Exit(True);}
+  exit(TTaskStatus.ERR);
+end;
+
+function CookTask(
+  location, tries: integer;
+  xpPerItem: extended;
+  pathToTask: TPointArray
+): ^TCookTask;
+var task: ^TCookTask;
+begin
+  new(task);
+  task^.init('Cook', location, tries, xpPerItem, pathToTask, task^.__cook);
+  task^.itemsBurned := 0;
+  exit(task);
+end;
+
+{$f+}

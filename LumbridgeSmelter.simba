@@ -1,10 +1,11 @@
 program LumbridgeSmelter;
 {$DEFINE SMART}
-{$i akarigar/engine.simba}
 
+{$i akarigar/engine.simba}
 {$i akarigar/lib/tasks/TBankTask.simba}
 {$i akarigar/lib/tasks/TSmeltTask.simba}
 {$i akarigar/lib/tasks/TSmithTask.simba}
+
 {$ContinueCase ON}
 {$f-}
 
@@ -47,18 +48,6 @@ begin
     wait(gaussRangeInt(500, 3000))
   else
     wait(gaussRangeInt(0, 750));
-end;
-
-function loadPreset(): TTaskStatus;
-var i: integer = 0;
-begin
-  while (engine.randomlyWait()) and (not bankscreen.open(BANK_CHEST_LUMBRIDGE)) and (inc(i) < FAIL_MAX) do;
-  if i >= FAIL_MAX then exit(TTaskStatus.ERR);
-  i := 0;
-
-  while (engine.randomlyWait()) and (not bankScreen.clickButton(BANK_BUTTON_PRESET_1)) and (inc(i) < FAIL_MAX) do;
-  if (i >= FAIL_MAX) or (not engine.randomlyWait()) or (tabBackpack.isEmpty()) then exit(TTaskStatus.ERR);
-  exit(TTaskStatus.DONE);
 end;
 
 function loadTasks(): TTaskList;
