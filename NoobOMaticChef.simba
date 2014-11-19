@@ -13,8 +13,6 @@ const
   P_ITEM_XP := 1;
   FAIL_MAX := 25;
 
-var gBankTask: ^TBankTask;
-
 procedure doAntiBan();
 begin
   case Random(600) of
@@ -39,17 +37,78 @@ begin
     wait(gaussRangeInt(0, 750));
 end;
 
-function loadTasks(): TTaskList;
-var tasks: TTaskList;
+function TActivity.__xpGained(): integer;
 begin
-  tasks.append(gBankTask);
-  tasks.append(CookTask(
-    LOCATION_LUMBRIDGE,
+  if self.tasks.size() >= 2 then
+    exit(round(self.tasks[1]^.itemsGained * self.tasks[1]^.xpPerItem));
+  exit(0);
+end;
+
+function TActivity.__cookAtLumbridge(): boolean;
+begin
+  exit(
+    self.__xpGained() + players[currentPlayer].skillLevel[SKILL_COOKING] <
+    XP_AT_LEVEL[players[currentPlayer].integers[P_SAFE_LEVEL]]
+  );
+end;
+
+function TActivity.__setup(): boolean;
+begin
+  players[currentPlayer].skillLevel[SKILL_COOKING] :=
+    tabStats.getSkillInfo(SKILL_COOKING, INFO_CURRENT_XP);
+
+  if self.__cookAtLumbridge() then
+    begin
+      self.tasks.append(BankTask(
+        LOCATION_LUMBRIDGE,
+        FAIL_MAX,
+        BANK_BUTTON_PRESET_1,
+        [Point(100, 264), Point(134, 263), Point(182, 263), Point(179, 216), Point(153, 187), Point(134, 166), Point(118, 122), Point(99, 100)]
+      ));
+      self.tasks.append(CookTask(
+        LOCATION_LUMBRIDGE,
+        FAIL_MAX,
+        players[currentPlayer].extendeds[P_ITEM_XP],
+        [Point(99, 100), Point(118, 122), Point(134, 166), Point(153, 187), Point(179, 216), Point(182, 263), Point(134, 263), Point(100, 264)]
+      ));
+      exit(lodestoneScreen.teleportTo(LOCATION_LUMBRIDGE) and engine.randomlyWait(15000, 17000));
+    end;
+
+  writeLn('cooking at al khariz');
+  self.tasks.append(BankTask(
+      LOCATION_AL_KHARID,
+      FAIL_MAX,
+      BANK_BUTTON_PRESET_1,
+      [Point(393, 179), Point(415, 179), Point(386, 238)]
+    ));
+  self.tasks.append(CookTask(
+    LOCATION_AL_KHARID,
     FAIL_MAX,
     players[currentPlayer].extendeds[P_ITEM_XP],
-    [Point(99, 100), Point(118, 122), Point(134, 166), Point(153, 187), Point(179, 216), Point(182, 263), Point(134, 263), Point(100, 264)]
+    [Point(386, 238), Point(415, 179), Point(393, 179)]
   ));
-  exit(tasks);
+  exit(lodestoneScreen.teleportTo(LOCATION_AL_KHARID) and engine.randomlyWait(15000, 17000));
+end;
+
+function TActivity.__isDone(): boolean;
+var task: PTask;
+begin
+  if (self.tasks.isEmpty()) or (self.tasks.size() < 2) then exit(true);
+
+  task := self.tasks[1];
+  if task^.location = LOCATION_AL_KHARID then exit(false);
+
+  exit(not self.__cookAtLumbridge());
+end;
+
+function loadActivity(): PActivity;
+var activity: PActivity;
+begin
+  new(activity);
+  activity^.name := 'Noob-O-Matic Chef';
+  activity^.isDone := activity^.__isDone;
+  activity^.setup := activity^.__setup;
+  exit(activity);
 end;
 
 procedure declarePlayers();
@@ -79,18 +138,11 @@ end;
 begin
   clearDebug();
 
-  gBankTask := BankTask(
-    LOCATION_LUMBRIDGE,
-    FAIL_MAX,
-    BANK_BUTTON_PRESET_1,
-    [Point(100, 264), Point(134, 263), Point(182, 263), Point(179, 216), Point(153, 187), Point(134, 166), Point(118, 122), Point(99, 100)]
-  );
-
   initPlayerForm();
   engine
     .loadArea('NOOB_O_MATIC_CHEF')
     .setAntiBan(doAntiBan)
     .setDeclarePlayers(declarePlayers)
-    .setTaskLoader(loadTasks)
+    .setActivityLoader(loadActivity)
     .run();
 end.

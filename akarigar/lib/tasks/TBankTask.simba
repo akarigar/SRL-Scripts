@@ -24,12 +24,12 @@ function BankTask(
 ): ^TBankTask;
 var task: ^TBankTask;
 begin
-  new(task);writeLn('before init');
-  writeLn(@(task^));
+  new(task);
   task^.init('Bank', location, tries, 0, pathToBank, task^.__loadPreset);
   task^.button := button;
 
   case location of
+    LOCATION_AL_KHARID: task^.bankType := BANK_NPC_GREEN;
     LOCATION_LUMBRIDGE: task^.bankType := BANK_CHEST_LUMBRIDGE;
     else task^.bankType := BANK_BOOTH;
   end;

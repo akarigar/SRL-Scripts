@@ -3,6 +3,11 @@
 
 type TCookTask = record(TTask)
   itemsBurned: integer;
+
+  objectSettings: record
+    color, tolerance: integer;
+    hue, sat: extended;
+  end;
 end;
 
 function TCookTask.__cook(): TTaskStatus;
@@ -10,9 +15,9 @@ var i, x, y, rawCount: Integer = 0;
 begin
   rawCount := tabBackpack.count();
   if not engine.useObject(
-    2451907, // color
-    4, // tolerance
-    colorSetting(2, 0.35, 1.71), // colorSettings
+    self.objectSettings.color, // color
+    self.objectSettings.tolerance, // tolerance
+    colorSetting(2, self.objectSettings.hue, self.objectSettings.sat), // colorSettings
     mainscreen.getBounds(), // bounds
     Point(-1, -1), // midPoint
     ['Cook-at', 'ook', '-at', 'range'], // overText
@@ -30,12 +35,7 @@ begin
     inc(self.itemsBurned);
     dec(self.itemsGained);
   end;
-
-  {if (area.location = LOCATION_LUMBRIDGE) and (Random() > 0.75) and (randomlyWait()) and
-      (tabStats.getSkillLevel(SKILL_COOKING) >= players[currentPlayer].integers[P_SAFE_LEVEL]) then
-     Exit(area.loadLocation(LOCATION_AL_KHARID));
-  Exit(True);}
-  exit(TTaskStatus.ERR);
+  exit(TTaskStatus.DONE);
 end;
 
 function CookTask(
@@ -48,6 +48,12 @@ begin
   new(task);
   task^.init('Cook', location, tries, xpPerItem, pathToTask, task^.__cook);
   task^.itemsBurned := 0;
+
+  case location of
+    LOCATION_AL_KHARID: task^.objectSettings := [3029703, 8, 0.17, 2.07];
+    LOCATION_LUMBRIDGE: task^.objectSettings := [2451907, 4, 0.35, 1.71];
+  end;
+
   exit(task);
 end;
 

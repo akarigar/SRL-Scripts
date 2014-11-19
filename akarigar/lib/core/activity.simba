@@ -1,0 +1,19 @@
+{$include_once task.simba}
+{$f-}
+
+type TActivity = record
+  name: string;
+  tasks: TTaskList;
+  isDone, setup: function(): boolean of object;
+end;
+
+type PActivity = ^TActivity;
+
+procedure TActivity.dispose();
+begin
+  self.tasks.clear();
+  self.isDone := nil;
+  self.setup := nil;
+end;
+
+{$f+}
