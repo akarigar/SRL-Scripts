@@ -97,25 +97,15 @@ begin
     writeLn('Breaked for ', msToTime(integers[P_TIME_BREAKED], TIME_FORMAL),' (',
             integers[P_BREAK_COUNT], ' breaks)');
 
+    writeLn('Activity ', self.__activity^.name, ' looped ', integers[P_LOOP_COUNT], ' times');
     for i := 0 to high(self.__activity^.tasks) do
     begin
       task := self.__activity^.tasks[i];
-      if task^.xpPerItem <= 0 then continue;
-
-      writeLn(formatProgressLine(
-        'Items gained from ' + task^.name + ': ',
-        task^.itemsGained,
-        timeRan
-      ));
-      writeLn(formatProgressLine(
-        'XP gained from ' + task^.name + ': ',
-        round(task^.xpPerItem * task^.itemsGained),
-        timeRan
-      ));
-      totalXp += task^.xpPerItem * task^.itemsGained;
+      if (task^.xpPerItem <= 0) or (task^.reportProgress = nil) then continue;
+      totalXp += task^.reportProgress(timeRan);
     end;
 
-    writeLn(formatProgressLine('Total XP: ', round(totalXp), timeRan));
+    writeLn(formatProgressLine('Total XP: %d (%d/hr)', round(totalXp), timeRan));
     writeLn('================================================================');
   end;
 end;

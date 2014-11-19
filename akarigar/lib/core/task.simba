@@ -1,3 +1,4 @@
+{$include_once ../util/util.simba}
 {$f-}
 
 {
@@ -17,6 +18,7 @@ type TTask = record
   xpPerItem: extended;
   pathToTask: TPointArray;
   run: function(): TTaskStatus of object;
+  reportProgress: function(timeRan: integer): extended of object;
 end;
 
 type PTask = ^TTask;
@@ -26,7 +28,8 @@ procedure TTask.init(
   location, tries: integer;
   xpPerItem: extended;
   pathToTask: TPointArray;
-  run: function(): TTaskStatus of object = nil
+  run: function(): TTaskStatus of object;
+  reportProgress: function(timeRan: integer): extended of object = nil
 );
 begin
   self.name := name;
@@ -36,6 +39,23 @@ begin
   self.xpPerItem := xpPerItem;
   self.pathToTask := pathToTask;
   self.run := run;
+  if reportProgress = nil then self.reportProgress := self.__reportTaskProgress
+  else self.reportProgress := reportProgress;
+end;
+
+function TTask.__reportTaskProgress(timeRan: integer): extended;
+begin
+  writeLn(formatProgressLine(
+    'Items gained from ' + self.name + ': %d (%d/hr)',
+    self.itemsGained,
+    timeRan
+  ));
+  writeLn(formatProgressLine(
+    'XP gained from ' + self.name + ': %d (%d/hr)',
+    round(self.itemsGained * self.xpPerItem),
+    timeRan
+  ));
+  exit(self.itemsGained * self.xpPerItem);
 end;
 
 type TTaskList = array of PTask;

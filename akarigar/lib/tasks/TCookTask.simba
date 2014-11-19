@@ -38,6 +38,22 @@ begin
   exit(TTaskStatus.DONE);
 end;
 
+function TCookTask.__reportProgress(timeRan: integer): extended;
+begin
+  writeLn(formatProgressLine(
+    'Food cooked successfully: %d/' +
+      intToStr(self.itemsBurned + self.itemsGained) + ' (%d/hr)',
+    self.itemsGained,
+    timeRan
+  ));
+  writeLn(formatProgressLine(
+    'XP gained from cooking: %d (%d/hr)',
+    round(self.itemsGained * self.xpPerItem),
+    timeRan
+  ));
+  exit(self.itemsGained * self.xpPerItem);
+end;
+
 function CookTask(
   location, tries: integer;
   xpPerItem: extended;
@@ -46,7 +62,7 @@ function CookTask(
 var task: ^TCookTask;
 begin
   new(task);
-  task^.init('Cook', location, tries, xpPerItem, pathToTask, task^.__cook);
+  task^.init('Cook', location, tries, xpPerItem, pathToTask, task^.__cook, task^.__reportProgress);
   task^.itemsBurned := 0;
 
   case location of

@@ -29,9 +29,9 @@ begin
   exit(round(total * (3600 / (totalTime / 1000))));
 end;
 
-function formatProgressLine(prefix: string; value, totalTime: integer): string;
+function formatProgressLine(str: string; value, totalTime: integer): string;
 begin
-  exit(prefix + intToStr(value) + ' (' + intToStr(getHourlyRate(value, totalTime)) + '/hr)');
+  exit(format(str, [value, getHourlyRate(value, totalTime)]));
 end;
 
 {$f+}
