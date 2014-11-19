@@ -15,7 +15,7 @@ const
 
 procedure doAntiBan();
 begin
-  case Random(600) of
+  case random(600) of
     1..10: sleepAndMoveMouse(randomRange(150, 1000));
     11..20:
     begin
@@ -74,7 +74,6 @@ begin
       exit(lodestoneScreen.teleportTo(LOCATION_LUMBRIDGE) and engine.randomlyWait(15000, 17000));
     end;
 
-  writeLn('cooking at al khariz');
   self.tasks.append(BankTask(
       LOCATION_AL_KHARID,
       FAIL_MAX,

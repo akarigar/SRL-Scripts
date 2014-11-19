@@ -28,7 +28,7 @@ var gBankTask: ^TBankTask;
 
 procedure doAntiBan();
 begin
-  case Random(600) of
+  case random(600) of
     1..10: sleepAndMoveMouse(randomRange(150, 1000));
     11..20:
     begin
@@ -50,32 +50,33 @@ begin
     wait(gaussRangeInt(0, 750));
 end;
 
-function loadTasks(): TTaskList;
-var tasks: TTaskList;
+function TActivity.__isDone(): boolean; begin exit(false); end;
+
+function loadActivity(): PActivity;
+var activity: PActivity;
 begin
-  with players[currentPlayer] do
-  begin
-    tasks.append(gBankTask);
+  new(activity);
+  activity^.isDone := activity^.__isDone;
+  activity^.tasks.append(gBankTask);
 
-    if booleans[P_SMELT] then
-      tasks.append(SmeltTask(
-        gBankTask^.location,
-        FAIL_MAX,
-        extendeds[P_BAR_XP],
-        [Point(150, 110)]
-      ));
+  if players[currentPlayer].booleans[P_SMELT] then
+    activity^.tasks.append(SmeltTask(
+      gBankTask^.location,
+      FAIL_MAX,
+      players[currentPlayer].extendeds[P_BAR_XP],
+      [Point(150, 110)]
+    ));
 
-    if booleans[P_SMITH] then
-      tasks.append(SmithTask(
-        gBankTask^.location,
-        FAIL_MAX,
-        integers[P_ITEM_SLOT],
-        strings[P_ITEM_NAME],
-        extendeds[P_ITEM_XP],
-        [Point(162, 114)]
-      ));
-  end;
-  exit(tasks);
+  if players[currentPlayer].booleans[P_SMITH] then
+    activity^.tasks.append(SmithTask(
+      gBankTask^.location,
+      FAIL_MAX,
+      players[currentPlayer].integers[P_ITEM_SLOT],
+      players[currentPlayer].strings[P_ITEM_NAME],
+      players[currentPlayer].extendeds[P_ITEM_XP],
+      [Point(162, 114)]
+    ));
+  exit(activity);
 end;
 
 procedure declarePlayers();
@@ -140,6 +141,6 @@ begin
     .loadArea('AKARIGAR_LUMBRIDGE')
     .setAntiBan(doAntiBan)
     .setDeclarePlayers(declarePlayers)
-    .setTaskLoader(loadTasks)
+    .setActivityLoader(loadActivity)
     .run();
 end.
