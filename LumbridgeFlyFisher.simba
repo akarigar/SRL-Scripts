@@ -1,18 +1,14 @@
 program LumbridgeFlyFisher;
 {$DEFINE SMART}
-{$DEFINE SPS}
+
 {$i akarigar/engine.simba}
+{$i akarigar/lib/tasks/TBankTask.simba}
+{$i akarigar/lib/tasks/TFishTask.simba}
 
-// Player constants.
-const
-  // Counters
-  P_TROUT_CAUGHT := 0;
-  P_SALMON_CAUGHT := 1;
+{$ContinueCase ON}
+{$f-}
 
-  // Booleans
-  P_BANK := 0; // TODO: Implement this
-
-  FAIL_MAX := 25;
+const FAIL_MAX := 25;
 
 // Path constants.
 const
@@ -20,180 +16,50 @@ const
   FISH_TO_BANK := [Point(186, 139), Point(200, 98), Point(165, 97), Point(130, 97), Point(78, 110)];
   FISH_SPOTS := [Point(186, 134), Point(202, 178)];
 
-var troutDtm: integer;
+var
+  troutDtm: integer;
+  gBankTask: ^TBankTask;
 
 procedure doAntiBan();
-var max: integer = 7500;
 begin
-  case random(200) of
-    101..175: mouseOffClient(OFF_CLIENT_RANDOM);
-    51..80: sleepAndMoveMouse(gaussRangeInt(0, Round(max / 2)));
-    81..89: pickUpMouse();
-    90..100:
+  case random(600) of
+    1..10: sleepAndMoveMouse(randomRange(150, 1000));
+    11..20:
     begin
-      if random() > 0.75 then hoverSkill(SKILL_FISHING)
+      if random() > 0.75 then hoverSkill(SKILL_SMITHING)
       else hoverRandomSkill();
-      wait(gaussRangeInt(3000, 5000));
-    end;
-  end;
-  Wait(gaussRangeInt(0, max));
-end;
-
-function goAndDo(symbol: Integer; path: TPointArray; toDo: function(): boolean): boolean;
-begin
-  Exit(engine.walkPath(path, symbol) and toDo());
-end;
-
-function findFishingPoints(out fishingPoints: TPointArray; bounds: TBox): boolean;
-var
-  x, y: integer;
-begin
-  exit(findColorsSpiralTolerance(x, y, fishingPoints, 13220522, bounds, 10, colorSetting(2, 0.38, 1.47)));
-end;
-
-function getRiverBounds(): TBox;
-var
-  x, y: integer;
-  riverPoints: TPointArray;
-  emptyBox: TBox;
-begin
-  if not findColorsSpiralTolerance(x, y, riverPoints, 12483174, mainscreen.getBounds(), 6, colorSetting(2, 0.15, 0.90)) then
-    Exit(emptyBox);
-  Exit(riverPoints.getBounds());
-end;
-
-function findFishingSpots(out fishingSpots: T2DPointArray; failed: integer = 0): boolean;
-var
-  x, y: integer;
-  fishingPoints: TPointArray;
-  timer: TTimeMarker;
-begin
-  result := false;
-  timer.start();
-  // Look for a suitable fishing spot for 3 seconds.
-  repeat
-    if not findFishingPoints(fishingPoints, getRiverBounds()) then
       continue;
-
-    mainscreen.filterPointsPlayer(fishingPoints);
-    fishingSpots := fishingPoints.cluster(20);
-    fishingSpots.sortFromMidPoint(mainscreen.playerPoint);
-    result := true;
-  until timer.getTime() > 3000;
-
-  // Try four times total in between two different places to find a spot.
-  if (not result) and (failed <= 3) then
-  begin
-    inc(failed);
-    engine.walkTo(FISH_SPOTS[failed mod length(FISH_SPOTS)]);
-    minimap.waitPlayerMoving();
-    exit(findFishingSpots(fishingSpots, failed));
-  end;
-end;
-
-function isFishing(): boolean;
-var
-  fishingPoints: TPointArray;
-  spotBounds: TBox;
-  timer: TTimeMarker;
-begin
-  result := false;
-  spotBounds := mainscreen.playerBox;
-  spotBounds.X1 -= mainscreen.playerBox.getWidth();
-  spotBounds.X2 -= mainscreen.playerBox.getWidth();
-  timer.start();
-  while timer.getTime() <= 1500 do
-    if findFishingPoints(fishingPoints, spotBounds) then exit(true);
-end;
-
-function hasFeathers(): boolean;
-var x, y: integer;
-begin
-  exit(findColor(x, y, 65535, tabBackpack.getBounds()));
-end;
-
-procedure fish(fishingSpots: T2DPointArray);
-var
-  i: integer;
-  timer: TTimeMarker;
-begin
-  for i := 0 to high(fishingSpots) do
-  begin
-    mouseBox(fishingSpots[i].getBounds());
-    if isMouseOverText(['Lure', 'ure ', 'ure'], 500) then
-    begin
-      fastClick(mouse_Left);
-      wait(200);
-      minimap.waitPlayerMoving();
-      break;
     end;
-    wait(randomRange(350, 650));
-  end
-  if i > high(fishingSpots) then
-    exit;
-
-  // Wait until we are either logged out, our bp is full or this spot dies out.
-  i := tabBackpack.count();
-  timer.start();
-  while (isLoggedIn()) and (not tabBackpack.isFull()) and (isFishing()) do
-  begin
-    // Just a fail safe.. We should be catching at least one fish every 30 seconds.
-    if timer.getTime() > 30000 then
-      if i = tabBackpack.count() then break
-      else
-      begin
-        i := tabBackpack.count();
-        timer.reset();
-        timer.start();
-      end;
-    doAntiBan();
+    21..35:
+    begin
+      if random() > 0.5 then pickupMouse();
+      smallRandomMouse(gaussRangeInt(400, 1200));
+      wait(randomRange(500, 1000));
+    end;
+    36..150: if not minimap.isPlayerMoving() then mouseOffClient(OFF_CLIENT_RANDOM);
   end;
+  if progressScreen.isOpen(500) then
+    wait(gaussRangeInt(500, 3000))
+  else
+    wait(gaussRangeInt(0, 750));
 end;
 
-function goFish(): boolean;
-var
-  fishingPoints: TPointArray;
-  fishingSpots: T2DPointArray;
-  timer: TTimeMarker;
-  troutCaught: integer;
-begin
-  while (isLoggedIn()) and (hasFeathers()) and (not tabBackpack.isFull()) do
-  begin
-    if engine.randomlyWait() and findFishingSpots(fishingSpots) then
-      fish(fishingSpots);
-  end;
-  troutCaught := tabBackpack.countDTM(troutDtm);
-  inc(players[currentPlayer].integers[P_TROUT_CAUGHT], troutCaught);
-  inc(players[currentPlayer].integers[P_SALMON_CAUGHT], tabBackpack.count() - troutCaught - 1);
-  exit(tabBackpack.isFull());
-end;
+function TActivity.__isDone(): boolean; begin exit(false); end;
 
-function tryX(f: function(x: integer): boolean of object; x: integer): boolean;
-var i: integer = 0;
+function loadActivity(): PActivity;
+var activity: PActivity;
 begin
-  while engine.randomlyWait() and (not f(x)) and (inc(i) < FAIL_MAX) do;
-  exit(i < FAIL_MAX);
-end;
-
-function tryX(f: function(x: integer; b: boolean): boolean of object; x: integer; b: boolean = false): boolean; overload;
-var i: integer = 0;
-begin
-  while engine.randomlyWait() and (not f(x, b)) and (inc(i) < FAIL_MAX) do;
-  exit(i < FAIL_MAX);
-end;
-
-function loadPreset(): boolean;
-begin
-  exit(tryX(bankscreen.open, BANK_CHEST_LUMBRIDGE) and tryX(bankScreen.clickButton, BANK_BUTTON_PRESET_1, true));
-end;
-
-function tock(): boolean;
-begin
-  result := goAndDo(MM_SYMBOL_BANK, FISH_TO_BANK, loadPreset);
-  wait(gaussRangeInt(350, 1000));
-
-  if not (result and hasFeathers()) then exit(false);
-  result := goAndDo(MM_SYMBOL_FISHING, BANK_TO_FISH, goFish);
+  new(activity);
+  activity^.isDone := activity^.__isDone;
+  activity^.tasks.append(gBankTask);
+  activity^.tasks.append(FishTask(
+    gBankTask^.location,
+    FAIL_MAX,
+    troutDtm,
+    [Point(78, 110), Point(130, 97), Point(165, 97), Point(200, 98), Point(186, 139)],
+    [Point(186, 134), Point(202, 178)]
+  ));
+  exit(activity);
 end;
 
 procedure initPlayerForm();
@@ -210,26 +76,6 @@ begin
   end;
 end;
 
-procedure showProgress(timeRan: integer);
-var troutXp, salmonXp: integer;
-begin
-  with players[currentPlayer] do
-  begin
-    troutXp := integers[P_TROUT_CAUGHT] * 50;
-    salmonXp := integers[P_SALMON_CAUGHT] * 70;
-    writeLn('================================================================');
-    writeLn('Lumbridge Fly Fisher Progress Report');
-    writeLn('Player[', currentPlayer, ']: ', nickname);
-    writeLn('Active for ', msToTime(timeRan, TIME_FORMAL));
-    writeLn('Breaked ', integers[P_BREAK_COUNT], ' (', msToTime(integers[P_TIME_BREAKED], TIME_FORMAL), ')');
-    writeLn(integers[P_TROUT_CAUGHT] + integers[P_SALMON_CAUGHT], ' fish caught in ', integers[P_LOOP_COUNT], ' loads');
-    writeLn('Trout: ', integers[P_TROUT_CAUGHT], ' (', troutXp, ' XP)');
-    writeLn('Salmon: ', integers[P_SALMON_CAUGHT], ' (', salmonXp, ' XP)');
-    writeLn('Total XP: ', troutXp + salmonXp, ' (', (troutXp + salmonXp) * round(3600000 / timeRan), ' XP/hr)');
-    writeLn('================================================================');
-  end;
-end;
-
 procedure autoAntiBan();
 begin
   case Random(100) of
@@ -242,18 +88,28 @@ begin
   end;
 end;
 
+procedure freeResources();
+begin
+  freeDTM(troutDtm);
+end;
+
 begin
   clearDebug();
 
   troutDtm := DTMFromString('m1gAAAHic42JgYGBmZmBgAWJ+KBYG4u9MDAzfmCDiIPwXyG4Eqi0H4mIgrgTiKiDuAeI2IG4H4i4ov7cdxGMiiCUZiAOMRGIEAABCZAot');
+  addOnTerminate('freeResources');
+  gBankTask := BankTask(
+    LOCATION_LUMBRIDGE,
+    FAIL_MAX,
+    BANK_BUTTON_PRESET_1,
+    [Point(186, 139), Point(200, 98), Point(165, 97), Point(130, 97), Point(78, 110)]
+  );
 
-  initPlayerForm();
-  engine.showProgress := showProgress;
+  //initPlayerForm();
   engine
-    .onTick(tock)
-    .setAntiBan(autoAntiBan)
     .loadArea('LUMBRIDGE_FLY_FISH_MAP')
+    .setActivityLoader(loadActivity)
+    .setAntiBan(doAntiBan)
     .run();
-  freeDTM(troutDtm);
 end.
 

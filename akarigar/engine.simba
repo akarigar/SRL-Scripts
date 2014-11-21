@@ -60,19 +60,6 @@ end;
 
 // End Setters =================================================================
 
-function TEngine.goCloser(symbol, dist: integer = 10): boolean;
-var p: TPoint;
-begin
-  if not minimap.findSymbol(p, symbol, minimap.getBounds()) then
-    exit(false);
-
-  if distance(p, minimap.getCenterPoint()) < dist then
-    exit(true);
-
-  mouse(p, mouse_Left);
-  exit(minimap.waitPlayerMoving());
-end
-
 function TEngine.loadArea(mapName: string): TEngine;
 begin
   currentArea.setup(mapName, RUNESCAPE_OTHER);
@@ -197,12 +184,10 @@ begin
       exit(true);
 end;
 
-function TEngine.walkPath(path: TPointArray; smybol: integer = -1; distance: integer = 10): boolean;
+function TEngine.walkPath(path: TPointArray): boolean;
 begin
   if length(path) = 0 then exit(true);
-  result := currentArea.walkPath(path) or self.walkTo(path[high(path)]);
-  if (not result) and (smybol >= 0) then
-    result := self.goCloser(smybol, distance);
+  exit(currentArea.walkPath(path) or self.walkTo(path[high(path)]));
 end;
 
 {
@@ -298,7 +283,7 @@ begin
     editBoxLabels.combine(['World', 'Take a break around (mins)', 'Duration of break (mins)']);
     editBoxDefaults.combine(['-1', '60', '5']);
     editBoxHints.combine([
-      'What world to use? (-1 means use current, 0 means use random',
+      'What world to use? (-1 means use current, 0 means use random)',
       'Around how long to run before taking a break?',
       'Around how long should the break be?'
     ]);

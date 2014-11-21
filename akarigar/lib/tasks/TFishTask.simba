@@ -1,0 +1,160 @@
+{$include_once ../../engine.simba}
+{$f-}
+
+type TFishTask = record(TTask)
+  troutCaught, troutDtm: integer;
+  fishingSpots: TPointArray;
+end;
+
+function TFishTask.__getRiverBounds(): TBox;
+var
+  x, y: integer;
+  riverPoints: TPointArray;
+  emptyBox: TBox;
+begin
+  if not findColorsSpiralTolerance(x, y, riverPoints, 12483174, mainscreen.getBounds(), 6, colorSetting(2, 0.15, 0.90)) then
+    exit(emptyBox);
+  exit(riverPoints.getBounds());
+end;
+
+function TFishTask.__isFishing(): boolean;
+var
+  x, y: integer;
+  fishingPoints: TPointArray;
+  bounds: TBox;
+  timer: TTimeMarker;
+begin
+  result := false;
+  bounds := mainscreen.playerBox;
+  bounds.X1 -= mainscreen.playerBox.getWidth();
+  bounds.X2 -= mainscreen.playerBox.getWidth();
+  timer.start();
+  while timer.getTime() <= 1500 do
+    if findColorsSpiralTolerance(x, y, fishingPoints, 13220522, bounds, 10, colorSetting(2, 0.38, 1.47)) then
+      exit(true);
+end;
+
+function TFishTask.__hasFeathers(): boolean;
+var x, y: integer;
+begin
+  exit(findColor(x, y, 65535, tabBackpack.getBounds()));
+end;
+
+{ Walks through all the known spots twice to find & use an active spot. }
+function TFishTask.__tryFishing(): boolean;
+var i: integer;
+begin
+  for i := 0 to length(self.fishingSpots) * 2 - 1 do
+    if engine.walkTo(self.fishingSpots[i mod length(self.fishingSpots)]) and
+       engine.useObject(
+        13220522, // color
+        10, // tolerance
+        colorSetting(2, 0.38, 1.47), // colorSettings
+        self.__getRiverBounds(), // bounds
+        mainscreen.playerPoint, // midPoint
+        ['Lure', 'ure ', 'ure'], // overText
+        self.tries // tries
+       ) then exit(true);
+  exit(false);
+end;
+
+function TFishTask.__goFish(): boolean;
+var
+  i: integer;
+  timer: TTimeMarker;
+begin
+  if not self.__tryFishing() then exit(false);
+
+  // Wait until we are either logged out, our bp is full or this spot dies out.
+  i := tabBackpack.count();
+  timer.start();
+  while (isLoggedIn()) and (not tabBackpack.isFull()) and (self.__isFishing()) do
+  begin
+    // Just a fail safe.. We should be catching at least one fish every 30 seconds.
+    if timer.getTime() > 30000 then
+      if i = tabBackpack.count() then break
+      else
+      begin
+        i := tabBackpack.count();
+        timer.reset();
+        timer.start();
+      end;
+    if SRL_Events[EVENT_ANTIBAN] <> nil then SRL_Events[EVENT_ANTIBAN]()
+    else engine.randomlyWait(750, 1250);
+  end;
+  exit(true);
+end;
+
+function TFishTask.__fish(): TTaskStatus;
+var
+  fishingPoints: TPointArray;
+  fishingSpots: T2DPointArray;
+  timer: TTimeMarker;
+  troutCaught: integer;
+begin
+  timer.start();
+  while (timer.getTime() < 30000) and (self.__hasFeathers()) and (not tabBackpack.isFull()) do
+  begin
+    if engine.randomlyWait() and self.__goFish() then
+    begin
+      timer.reset();
+      timer.start();
+    end;
+  end;
+  troutCaught := tabBackpack.countDTM(self.troutDtm);
+  inc(self.troutCaught, troutCaught);
+  inc(self.itemsGained, tabBackpack.count() - troutCaught - 1);
+  if tabBackpack.isFull() then exit(TTaskStatus.DONE)
+  else exit(TTaskStatus.ERR);
+end;
+
+procedure TFishTask.__reportFishingProgress(
+  fish: string;
+  count: integer;
+  xp: extended;
+  timeRan: integer
+);
+begin
+  writeLn(formatProgressLine(
+    fish + ' caught: %d (%d/hr)',
+    count,
+    timeRan
+  ));
+  writeLn(formatProgressLine(
+    'XP gained from catching ' + fish + ': %d (%d/hr)',
+    round(count * xp),
+    timeRan
+  ));
+end;
+
+function TFishTask.__reportProgress(timeRan: integer): extended;
+begin
+  self.__reportFishingProgress('Trout', self.troutCaught, 70, timeRan);
+  self.__reportFishingProgress('Salmon', self.itemsGained, self.xpPerItem, timeRan);
+  writeLn(formatProgressLine(
+    'Total fish caught: %d (%d/hr)',
+    self.troutCaught + self.itemsGained,
+    timeRan
+  ));
+  writeLn(formatProgressLine(
+    'Total XP gained from catching fish: %d (%d/hr)',
+    round(self.itemsGained * self.xpPerItem + self.troutCaught * 70),
+    timeRan
+  ));
+  exit(self.itemsGained * self.xpPerItem + self.troutCaught * 70);
+end;
+
+function FishTask(
+  location, tries, troutDtm: integer;
+  pathToTask, fishingSpots: TPointArray
+): ^TFishTask;
+var task: ^TFishTask;
+begin
+  new(task);
+  task^.init('Cook', location, tries, 90, pathToTask, task^.__fish, task^.__reportProgress);
+  task^.troutCaught := 0;
+  task^.fishingSpots := fishingSpots;
+  exit(task);
+end;
+
+{$f+}
