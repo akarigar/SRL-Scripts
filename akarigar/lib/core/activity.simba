@@ -9,11 +9,59 @@ end;
 
 type PActivity = ^TActivity;
 
-procedure TActivity.dispose();
+procedure TActivity.appendTask(task: PTask);
+begin
+  self.tasks.append(task);
+end;
+
+procedure TActivity.clear();
 begin
   self.tasks.clear();
   self.isDone := nil;
   self.setup := nil;
 end;
 
+type TActivityList = array of PActivity;
+
+procedure TActivityList.append(activity: PActivity);
+begin
+  setLength(self, length(self) + 1);
+  self[high(self)] := activity;
+end;
+
+procedure TActivityList.clear();
+var i: integer;
+begin
+  for i := 0 to high(self) do
+  begin
+    self[i]^.clear();
+    dispose(self[i]);
+  end;
+  setLength(self, 0);
+end;
+
+function TActivityList.size(): integer;
+begin
+  exit(length(self));
+end;
+
+type T2DActivityList = array of TActivityList;
+
+procedure T2DActivityList.clear();
+var i: integer;
+begin
+  for i := 0 to high(self) do
+    self[i].clear();
+  setLength(self, 0);
+end;
+
+procedure T2DActivityList.setActivities(i: integer; activities: TActivityList);
+begin
+  if i <= length(self) then
+    setLength(self, i + 1);
+  self[i].clear();
+  self[i] := activities;
+end;
+
 {$f+}
+

@@ -58,21 +58,21 @@ begin
     tabStats.getSkillInfo(SKILL_COOKING, INFO_CURRENT_XP);
 
   if self.__cookAtLumbridge() then
-    begin
-      self.tasks.append(BankTask(
-        LOCATION_LUMBRIDGE,
-        FAIL_MAX,
-        BANK_BUTTON_PRESET_1,
-        [Point(100, 264), Point(134, 263), Point(182, 263), Point(179, 216), Point(153, 187), Point(134, 166), Point(118, 122), Point(99, 100)]
-      ));
-      self.tasks.append(CookTask(
-        LOCATION_LUMBRIDGE,
-        FAIL_MAX,
-        players[currentPlayer].extendeds[P_ITEM_XP],
-        [Point(99, 100), Point(118, 122), Point(134, 166), Point(153, 187), Point(179, 216), Point(182, 263), Point(134, 263), Point(100, 264)]
-      ));
-      exit(lodestoneScreen.teleportTo(LOCATION_LUMBRIDGE) and engine.randomlyWait(15000, 17000));
-    end;
+  begin
+    self.tasks.append(BankTask(
+      LOCATION_LUMBRIDGE,
+      FAIL_MAX,
+      BANK_BUTTON_PRESET_1,
+      [Point(100, 264), Point(134, 263), Point(182, 263), Point(179, 216), Point(153, 187), Point(134, 166), Point(118, 122), Point(99, 100)]
+    ));
+    self.tasks.append(CookTask(
+      LOCATION_LUMBRIDGE,
+      FAIL_MAX,
+      players[currentPlayer].extendeds[P_ITEM_XP],
+      [Point(99, 100), Point(118, 122), Point(134, 166), Point(153, 187), Point(179, 216), Point(182, 263), Point(134, 263), Point(100, 264)]
+    ));
+    exit(lodestoneScreen.teleportTo(LOCATION_LUMBRIDGE) and engine.randomlyWait(15000, 17000));
+  end;
 
   self.tasks.append(BankTask(
       LOCATION_AL_KHARID,

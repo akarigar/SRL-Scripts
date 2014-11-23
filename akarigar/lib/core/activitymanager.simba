@@ -1,0 +1,49 @@
+{$include_once activity.simba}
+{$include_once srl-6/lib/core/players.simba}
+{$f-}
+
+type TActivityManager = record
+  __activities: T2DActivityList;
+  __currentIndex: TIntegerArray;
+end;
+
+procedure TActivityManager.destroy();
+begin
+  setLength(self.__currentIndex, 0);
+  self.__activities.clear();
+end;
+
+function TActivityManager.getCurrentActivity(): PActivity;
+var size: integer;
+begin
+  size := self.__activities[currentPlayer].size();
+  if size = 0 then exit(nil);
+  exit(self.__activities[currentPlayer][self.__currentIndex[currentPlayer] mod size]);
+end;
+
+function TActivityManager.isActivityDone(): boolean;
+begin
+  if self.getCurrentActivity()^.isDone = nil then exit(false)
+  else exit(self.getCurrentActivity()^.isDone());
+end;
+
+function TActivityManager.next(): PActivity;
+begin
+  inc(self.__currentIndex[currentPlayer]);
+  exit(self.getCurrentActivity());
+end;
+
+procedure TActivityManager.setup();
+var i: integer;
+begin
+  setLength(self.__currentIndex, length(self.__activities));
+  for i := 0 to high(self.__currentIndex) do
+    self.__currentIndex[i] := 0;
+end;
+
+procedure TActivityManager.setActivities(i: integer; activities: TActivityList);
+begin
+  self.__activities.setActivities(i, activities);
+end;
+
+{$f+}

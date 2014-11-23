@@ -3,6 +3,7 @@
 {$include_once SPS/lib/sps-rs3.simba}
 
 {$include_once lib/core/activity.simba}
+{$include_once lib/core/activitymanager.simba}
 {$include_once lib/core/task.simba}
 {$include_once lib/util/util.simba}
 {$f-}
@@ -31,19 +32,14 @@ type TEngine = record
   loadActivity: function(): PActivity;
 
   __activity: PActivity;
+  __activityManager: TActivityManager;
 end;
 
 var
-  engine: TEngine = [nil, nil, nil, nil];
+  engine: TEngine = [nil, nil, nil, nil, [[], []]];
   currentArea: TSPSArea;
 
 // Setters =====================================================================
-
-function TEngine.setActivityLoader(loadActivity: function(): PActivity): TEngine;
-begin
-  self.loadActivity := loadActivity;
-  exit(self);
-end;
 
 function TEngine.setAntiBan(antiBan: procedure()): TEngine;
 begin
@@ -57,6 +53,10 @@ begin
   exit(self);
 end;
 
+procedure TEngine.setPlayerActivities(i: integer; activities: TActivityList);
+begin
+  self.__activityManager.setActivities(i, activities);
+end
 
 // End Setters =================================================================
 
@@ -243,28 +243,22 @@ begin
     end;
 end;
 
-procedure TEngine.__clearActivity();
+procedure TEngine.__destroy();
 begin
-  writeLn('Freeing activity resources');
-  if self.__activity <> nil then
-  begin
-    writeLn(self.__activity^);
-    self.__activity^.dispose();
-    dispose(self.__activity);
-  end;
+  writeLn('Freeing engine resources');
   self.__activity := nil;
+  self.__activityManager.destroy();
 end;
 
-function TEngine.__execute(task: TTask): boolean;
+function TEngine.__execute(task: PTask): boolean;
 var
   status: TTaskStatus;
-  tasks: TTaskList;
 begin
   wait(gaussRangeInt(0, 1200));
-  writeLn('Starting task "', task.name, '"');
-  if not self.walkPath(task.pathToTask) then exit(false);
-  status := task.run();
-  writeLn('Task "', task.name, '" finished with status ', status);
+  writeLn('Starting task "', task^.name, '"');
+  if not self.walkPath(task^.pathToTask) then exit(false);
+  status := task^.run();
+  writeLn('Task "', task^.name, '" finished with status ', status);
   exit(status > TTaskStatus.ERR);
 end;
 
@@ -272,7 +266,7 @@ function TEngine.__execute(tasks: TTaskList): boolean; overload;
 var currentTask: integer;
 begin
   for currentTask := 0 to high(tasks) do
-    if not self.__execute(tasks.get(currentTask)) then exit(false);
+    if not self.__execute(tasks[currentTask]) then exit(false);
   exit(true);
 end;
 
@@ -310,10 +304,7 @@ begin
     mainscreen.setAngle(MS_ANGLE_HIGH);
 
     // Setup activity if needed & only start loop if everything is fine.
-    if self.__activity = nil then
-      players[currentPlayer].isActive :=
-        ((self.__activity := self.loadActivity()) <> nil) and
-        ((self.__activity^.setup = nil) or (self.__activity^.setup()));
+    self.__activity := self.__activityManager.getCurrentActivity();
 
     with players[currentPlayer] do
     begin
@@ -329,10 +320,11 @@ begin
     writeLn('isDone? ', self.__activity^.isDone());
     inc(players[currentPlayer].integers[P_TIME_RAN], timer.getTime());
 
+    if self.__activity^.isDone() then
+      self.__activity := self.__activityManager.next()
+
     if players[currentPlayer].isActive then
-      if self.__activity^.isDone() then
-        self.__clearActivity()
-      else
+      if timer.getTime() > players[currentPlayer].integers[P_NEXT_BREAK] then
         self.takeBreak(players[currentPlayer].integers[P_BREAK_LENGTH])
     else if players.getActive() > 0 then
       players.randomNext(false);
@@ -354,6 +346,7 @@ begin
 
   self.__declarePlayers();
   if not setupSRL() then exit(false);
+  self.__activityManager.setup();
 
 {$IFDEF SMART}
   smartEnableDrawing := true;
@@ -365,5 +358,5 @@ end;
 
 procedure destroyEngine();
 begin
-  engine.__clearActivity();
+  engine.__destroy();
 end;
