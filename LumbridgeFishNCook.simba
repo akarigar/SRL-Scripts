@@ -1,0 +1,69 @@
+program NoobOMaticChef;
+{$DEFINE SMART}
+
+{$i akarigar/engine.simba}
+{$i akarigar/lib/activities/CookActivity.simba}
+{$i akarigar/lib/activities/FlyFishActivity.simba}
+
+{$ContinueCase ON}
+{$f-}
+
+const
+  P_SAFE_LEVEL := 0;
+  P_ITEM_XP := 1;
+  FAIL_MAX := 25;
+
+procedure doAntiBan();
+begin
+  case random(600) of
+    1..10: sleepAndMoveMouse(randomRange(150, 1000));
+    11..20:
+    begin
+      if random() > 0.75 then hoverSkill(SKILL_SMITHING)
+      else hoverRandomSkill();
+      continue;
+    end;
+    21..35:
+    begin
+      if random() > 0.5 then pickupMouse();
+      smallRandomMouse(gaussRangeInt(400, 1200));
+      wait(randomRange(500, 1000));
+    end;
+    36..150: if not minimap.isPlayerMoving() then mouseOffClient(OFF_CLIENT_RANDOM);
+  end;
+  if progressScreen.isOpen(500) then
+    wait(gaussRangeInt(500, 3000))
+  else
+    wait(gaussRangeInt(0, 750));
+end;
+
+procedure declarePlayers(engine: PEngine);
+var i: integer;
+begin
+  for i := 0 to high(players) do
+    with playerForm.players[i] do
+    begin
+      engine^.setPlayerActivities(
+        i,
+        [
+          FlyFishActivity(LOCATION_LUMBRIDGE),
+          CookActivity(LOCATION_LUMBRIDGE, 70)
+        ]
+      );
+    end;
+end;
+
+procedure initPlayerForm();
+begin
+  playerForm.name := 'Lumbridge Fish & Cook';
+end;
+
+begin
+  clearDebug();
+  initPlayerForm();
+  engine
+    .loadArea('NOOB_O_MATIC_CHEF')
+    .setAntiBan(doAntiBan)
+    .setDeclarePlayers(declarePlayers)
+    .run();
+end.

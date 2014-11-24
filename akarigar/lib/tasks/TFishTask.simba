@@ -1,8 +1,10 @@
 {$include_once ../../engine.simba}
 {$f-}
 
+var __troutDtm: integer;
+
 type TFishTask = record(TTask)
-  troutCaught, troutDtm: integer;
+  troutCaught: integer;
   fishingSpots: TPointArray;
 end;
 
@@ -101,7 +103,7 @@ begin
       timer.start();
     end;
   end;
-  troutCaught := tabBackpack.countDTM(self.troutDtm);
+  troutCaught := tabBackpack.countDTM(__troutDtm);
   inc(self.troutCaught, troutCaught);
   inc(self.itemsGained, tabBackpack.count() - troutCaught - 1);
   if tabBackpack.isFull() then exit(TTaskStatus.DONE)
@@ -145,7 +147,7 @@ begin
 end;
 
 function FishTask(
-  location, tries, troutDtm: integer;
+  location, tries: integer;
   pathToTask, fishingSpots: TPointArray
 ): ^TFishTask;
 var task: ^TFishTask;
@@ -155,6 +157,16 @@ begin
   task^.troutCaught := 0;
   task^.fishingSpots := fishingSpots;
   exit(task);
+end;
+
+procedure __freeFishDtm();
+begin
+  freeDtm(__troutDtm);
+end;
+
+begin
+  __troutDtm := DTMFromString('m1gAAAHic42JgYGBmZmBgAWJ+KBYG4u9MDAzfmCDiIPwXyG4Eqi0H4mIgrgTiKiDuAeI2IG4H4i4ov7cdxGMiiCUZiAOMRGIEAABCZAot');
+  AddOnTerminate('__freeFishDtm');
 end;
 
 {$f+}

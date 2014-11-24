@@ -27,16 +27,19 @@ const
   // Booleans
   P_TAKE_BREAKS := 99;
 
-type TEngine = record
-  antiBan, declarePlayers: procedure();
-  loadActivity: function(): PActivity;
+type
+  PEngine = ^TEngine;
 
-  __activity: PActivity;
-  __activityManager: TActivityManager;
-end;
+  TEngine = record
+    antiBan: procedure();
+    declarePlayers: procedure(engine: PEngine);
+
+    __activity: PActivity;
+    __activityManager: TActivityManager;
+  end;
 
 var
-  engine: TEngine = [nil, nil, nil, nil, [[], []]];
+  engine: TEngine = [nil, nil, nil, [[], []]];
   currentArea: TSPSArea;
 
 // Setters =====================================================================
@@ -47,7 +50,7 @@ begin
   exit(self);
 end;
 
-function TEngine.setDeclarePlayers(declarePlayers: procedure()): TEngine;
+function TEngine.setDeclarePlayers(declarePlayers: procedure(engine: PEngine)): TEngine;
 begin
   self.declarePlayers := declarePlayers;
   exit(self);
@@ -227,7 +230,7 @@ begin
   players.setup(playerForm.players);
 
   if self.declarePlayers <> nil then
-    self.declarePlayers();
+    self.declarePlayers(@self);
 
   for i := 0 to high(players) do
     with playerForm.players[i] do
@@ -337,9 +340,6 @@ end;
 
 function TEngine.run(): boolean;
 begin
-  self.__activity := nil;
-  if self.loadActivity = nil then exit(false);
-
   self.__initForm();
   runPlayerForm();
   if not playerForm.isScriptReady then exit(false);

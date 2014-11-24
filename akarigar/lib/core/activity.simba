@@ -9,6 +9,11 @@ end;
 
 type PActivity = ^TActivity;
 
+function TActivity.__isDone(): boolean;
+begin
+  exit(false);
+end;
+
 procedure TActivity.appendTask(task: PTask);
 begin
   self.tasks.append(task);

@@ -1,0 +1,39 @@
+{$include_once ../core/activity.simba}
+{$include_once ../tasks/TBankTask.simba}
+{$include_once ../tasks/TCookTask.simba}
+{$f-}
+
+function CookActivity(location: integer; xpPerItem: extended): PActivity;
+var
+  activity: PActivity;
+  pathToTask: TPointArray;
+begin
+  new(activity);
+  activity^.isDone := activity^.__isDone;
+
+  case location of
+    LOCATION_LUMBRIDGE:
+      pathToTask := [Point(100, 264), Point(134, 263), Point(182, 263), Point(179, 216), Point(153, 187), Point(134, 166), Point(118, 122), Point(99, 100)];
+  end;
+  activity^.appendTask(BankTask(
+    location,
+    20,
+    BANK_BUTTON_PRESET_1,
+    pathToTask
+  ));
+
+  case location of
+    LOCATION_LUMBRIDGE:
+      pathToTask := [Point(99, 100), Point(118, 122), Point(134, 166), Point(153, 187), Point(179, 216), Point(182, 263), Point(134, 263), Point(100, 264)];
+  end;
+  activity^.appendTask(CookTask(
+    location,
+    20,
+    xpPerItem,
+    pathToTask
+  ));
+
+  exit(activity);
+end;
+
+{$f+}
