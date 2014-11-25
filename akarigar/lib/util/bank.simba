@@ -1,0 +1,48 @@
+{$include_once srl-6/lib/interfaces/bankscreen.simba}
+{$f-}
+
+function TRSBankScreen.withdraw(item: string; amount: integer; toFamiliar: boolean = false): boolean; overload;
+begin
+  if not self.clickButton(BANK_BUTTON_SEARCH, random() > 0.5) then exit(false);
+  wait(randomRange(250, 750));
+  typeSend(item);
+
+  if self.isPackEmpty() then exit(false);
+
+  wait(randomRange(500, 1000));
+  if length(item) <= 1 then
+    exit(self.withdraw(1, amount, [item], toFamiliar));
+  exit(self.withdraw(1, amount, [item, copy(item, 2)], toFamiliar));
+end;
+
+function TRSBankScreen.makePreset(items: TStringArray; amounts: TIntegerArray): boolean;
+var i: integer;
+begin
+  if (length(items) <= 0) or (length(items) <> length(amounts)) then exit(false);
+
+  for i := 0 to high(items) do
+  begin
+    if not self.withdraw(items[i], amounts[i]) then exit(false);
+    wait(randomRange(250, 750));
+    if not self.clickButton(BANK_BUTTON_SEARCH) then exit(false);
+    wait(randomRange(250, 750));
+  end;
+
+  // Setup preset
+  wait(250);
+  if not self.clickButton(BANK_BUTTON_PRESET_SETUP, random() > 0.5) then exit(false);
+
+  wait(randomRange(750, 1500));
+  mouseBox(IntToBox(225, 215, 240, 230), MOUSE_LEFT);
+
+  wait(randomRange(750, 1500));
+  mouseBox(IntToBox(45, 502, 160, 525), MOUSE_LEFT);
+
+  wait(randomRange(750, 1500));
+  mouseBox(IntToBox(113, 355, 210, 380), MOUSE_LEFT);
+
+  wait(randomRange(500, 1500));
+  exit(multiType(VK_ESCAPE, randomRange(30, 50), 1));
+end;
+
+{$f+}

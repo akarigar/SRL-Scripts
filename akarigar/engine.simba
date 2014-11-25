@@ -1,10 +1,12 @@
 {$include_once srl-6/srl.simba}
 {$include_once srl-6/lib/misc/srlplayerform.simba}
+
 {$include_once SPS/lib/sps-rs3.simba}
 
 {$include_once lib/core/activity.simba}
 {$include_once lib/core/activitymanager.simba}
 {$include_once lib/core/task.simba}
+{$include_once lib/util/bank.simba}
 {$include_once lib/util/util.simba}
 {$f-}
 
