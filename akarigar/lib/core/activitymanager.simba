@@ -21,12 +21,6 @@ begin
   exit(self.__activities[currentPlayer][self.__currentIndex[currentPlayer] mod size]);
 end;
 
-function TActivityManager.isActivityDone(): boolean;
-begin
-  if self.getCurrentActivity()^.isDone = nil then exit(false)
-  else exit(self.getCurrentActivity()^.isDone());
-end;
-
 function TActivityManager.next(): PActivity;
 begin
   inc(self.__currentIndex[currentPlayer]);

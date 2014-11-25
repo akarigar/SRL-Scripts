@@ -2,8 +2,7 @@ program NoobOMaticChef;
 {$DEFINE SMART}
 
 {$i akarigar/engine.simba}
-{$i akarigar/lib/activities/CookActivity.simba}
-{$i akarigar/lib/activities/FlyFishActivity.simba}
+{$i akarigar/lib/util/loader.simba}
 
 {$ContinueCase ON}
 {$f-}
@@ -46,8 +45,8 @@ begin
       engine^.setPlayerActivities(
         i,
         [
-          FlyFishActivity(LOCATION_LUMBRIDGE),
-          CookActivity(LOCATION_LUMBRIDGE, 70)
+          Activity(scriptPath + 'FlyFishActivity.xml'),
+          Activity(scriptPath + 'CookActivity.xml')
         ]
       );
     end;

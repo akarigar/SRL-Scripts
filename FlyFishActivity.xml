@@ -1,0 +1,19 @@
+<activity>
+  <task name="BankTask">
+    <arg>18</arg>
+    <arg>20</arg>
+    <arg>3</arg>
+    <arg>(186,139);(200,98);(165,97);(130,97);(78,110)</arg>
+  </task>
+
+  <task name="FishTask">
+    <arg>18</arg>
+    <arg>20</arg>
+    <arg>
+      (78,110);(130,97);(165,97);(200,98);(186,139)
+    </arg>
+    <arg>
+      (186,134);(202,178)
+    </arg>
+  </task>
+</activity>

@@ -1,0 +1,50 @@
+{$include_once ../core/activity.simba}
+{$include_once ../tasks/TBankTask.simba}
+{$include_once ../tasks/TCookTask.simba}
+{$include_once ../tasks/TFishTask.simba}
+{$f-}
+
+function Task(name: string; args: TStringArray): PTask;
+begin
+  case name of
+    'BankTask': exit(BankTask(args));
+    'CookTask': exit(CookTask(args));
+    'FishTask': exit(FishTask(args));
+    else exit(nil);
+  end;
+end;
+
+procedure TActivity.fromString(data: string);
+var
+  i: integer;
+  taskData: TStringArray;
+begin
+  data := between('<activity>', '</activity>', data);
+  taskData := multiBetween(data, '<task ', '</task>');
+
+  for i := 0 to high(taskData) do
+    self.appendTask(Task(
+      between('name="', '">', taskData[i]),
+      multiBetween(taskData[i], '<arg>', '</arg>')
+    ));
+end;
+
+function Activity(path: string): PActivity;
+var
+  activity: PActivity;
+  data: string;
+  file: integer;
+begin
+  try
+    file := openFile(path, false);
+    if not readFileString(file, data, fileSize(file)) then exit(nil);
+
+    new(activity);
+    activity^.fromString(data);
+  finally
+    closeFile(file);
+  end;
+  exit(activity);
+end;
+
+{$f+}

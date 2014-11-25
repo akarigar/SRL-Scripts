@@ -4,12 +4,13 @@
 type TActivity = record
   name: string;
   tasks: TTaskList;
-  isDone, setup: function(): boolean of object;
+  setup: function(): boolean of object;
 end;
 
 type PActivity = ^TActivity;
 
-function TActivity.__isDone(): boolean;
+{TODO: Implement this somehow..}
+function TActivity.isDone(): boolean;
 begin
   exit(false);
 end;
@@ -22,7 +23,6 @@ end;
 procedure TActivity.clear();
 begin
   self.tasks.clear();
-  self.isDone := nil;
   self.setup := nil;
 end;
 

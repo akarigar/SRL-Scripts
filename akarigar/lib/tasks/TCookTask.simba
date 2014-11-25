@@ -73,4 +73,15 @@ begin
   exit(task);
 end;
 
+function CookTask(args: TStringArray): ^TCookTask; overload;
+begin
+  if length(args) <> 4 then exit(nil);
+  exit(CookTask(
+    strToInt(args[0]),
+    strToInt(args[1]),
+    strToFloat(args[2]),
+    strToTPA(args[3])
+  ));
+end;
+
 {$f+}
