@@ -36,22 +36,6 @@ begin
     wait(gaussRangeInt(0, 750));
 end;
 
-procedure declarePlayers(engine: PEngine);
-var i: integer;
-begin
-  for i := 0 to high(players) do
-    with playerForm.players[i] do
-    begin
-      engine^.setPlayerActivities(
-        i,
-        [
-          Activity(scriptPath + 'FlyFishActivity.xml'),
-          Activity(scriptPath + 'CookActivity.xml')
-        ]
-      );
-    end;
-end;
-
 procedure initPlayerForm();
 begin
   playerForm.name := 'Lumbridge Fish & Cook';
@@ -63,6 +47,6 @@ begin
   engine
     .loadArea('NOOB_O_MATIC_CHEF')
     .setAntiBan(doAntiBan)
-    .setDeclarePlayers(declarePlayers)
+    .setActivityCreator(Activity)
     .run();
 end.

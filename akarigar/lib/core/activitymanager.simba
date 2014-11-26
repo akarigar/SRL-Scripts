@@ -1,43 +1,35 @@
 {$include_once activity.simba}
-{$include_once srl-6/lib/core/players.simba}
 {$f-}
 
+const __PAGE__ = 'http://akarigar.com/srl/nextActivity.php';
+
 type TActivityManager = record
-  __activities: T2DActivityList;
-  __currentIndex: TIntegerArray;
+  __createActivity: function(data: string): PActivity;
+  __currentActivity: PActivity;
 end;
 
 procedure TActivityManager.destroy();
 begin
-  setLength(self.__currentIndex, 0);
-  self.__activities.clear();
+  if self.__currentActivity <> nil then
+    dispose(self.__currentActivity);
+  self.__currentActivity := nil;
 end;
 
 function TActivityManager.getCurrentActivity(): PActivity;
-var size: integer;
 begin
-  size := self.__activities[currentPlayer].size();
-  if size = 0 then exit(nil);
-  exit(self.__activities[currentPlayer][self.__currentIndex[currentPlayer] mod size]);
+  exit(self.__currentActivity);
 end;
 
 function TActivityManager.next(): PActivity;
 begin
-  inc(self.__currentIndex[currentPlayer]);
+  self.destroy();
+  self.__currentActivity := self.__createActivity(getPage(__PAGE__));
   exit(self.getCurrentActivity());
 end;
 
-procedure TActivityManager.setup();
-var i: integer;
+procedure TActivityManager.setActivityCreator(f: function(s: string): PActivity);
 begin
-  setLength(self.__currentIndex, length(self.__activities));
-  for i := 0 to high(self.__currentIndex) do
-    self.__currentIndex[i] := 0;
-end;
-
-procedure TActivityManager.setActivities(i: integer; activities: TActivityList);
-begin
-  self.__activities.setActivities(i, activities);
+  self.__createActivity := f;
 end;
 
 {$f+}

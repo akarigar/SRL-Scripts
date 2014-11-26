@@ -41,10 +41,16 @@ type
   end;
 
 var
-  engine: TEngine = [nil, nil, nil, [[], []]];
+  engine: TEngine = [nil, nil, nil, [nil, nil]];
   currentArea: TSPSArea;
 
 // Setters =====================================================================
+
+function TEngine.setActivityCreator(f: function(s: string): PActivity): TEngine;
+begin
+  self.__activityManager.setActivityCreator(f);
+  exit(self);
+end;
 
 function TEngine.setAntiBan(antiBan: procedure()): TEngine;
 begin
@@ -57,11 +63,6 @@ begin
   self.declarePlayers := declarePlayers;
   exit(self);
 end;
-
-procedure TEngine.setPlayerActivities(i: integer; activities: TActivityList);
-begin
-  self.__activityManager.setActivities(i, activities);
-end
 
 // End Setters =================================================================
 
@@ -309,7 +310,7 @@ begin
     mainscreen.setAngle(MS_ANGLE_HIGH);
 
     // Setup activity if needed & only start loop if everything is fine.
-    self.__activity := self.__activityManager.getCurrentActivity();
+    self.__activity := self.__activityManager.next();
 
     with players[currentPlayer] do
     begin
@@ -348,7 +349,6 @@ begin
 
   self.__declarePlayers();
   if not setupSRL() then exit(false);
-  self.__activityManager.setup();
 
 {$IFDEF SMART}
   smartEnableDrawing := true;

@@ -19,7 +19,8 @@ var
   i: integer;
   taskData: TStringArray;
 begin
-  data := between('<activity>', '</activity>', data);
+  self.name := between('<activity name="', '">', data);
+  data := between('<activity name="', '</activity>', data);
   taskData := multiBetween(data, '<task ', '</task>');
 
   for i := 0 to high(taskData) do
@@ -29,21 +30,11 @@ begin
     ));
 end;
 
-function Activity(path: string): PActivity;
-var
-  activity: PActivity;
-  data: string;
-  file: integer;
+function Activity(data: string): PActivity;
+var activity: PActivity;
 begin
-  try
-    file := openFile(path, false);
-    if not readFileString(file, data, fileSize(file)) then exit(nil);
-
-    new(activity);
-    activity^.fromString(data);
-  finally
-    closeFile(file);
-  end;
+  new(activity);
+  activity^.fromString(data);
   exit(activity);
 end;
 
