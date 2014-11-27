@@ -5,6 +5,7 @@ var __troutDtm: integer;
 
 type TFishTask = record(TTask)
   troutCaught: integer;
+  salmonCaught: integer;
   fishingSpots: TPointArray;
 end;
 
@@ -105,7 +106,8 @@ begin
   end;
   troutCaught := tabBackpack.countDTM(__troutDtm);
   inc(self.troutCaught, troutCaught);
-  inc(self.itemsGained, tabBackpack.count() - troutCaught - 1);
+  inc(self.salmonCaught, tabBackpack.count() - troutCaught - 1);
+  self.itemsGained := self.salmonCaught + self.troutCaught;
   if tabBackpack.isFull() then exit(TTaskStatus.DONE)
   else exit(TTaskStatus.ERR);
 end;
@@ -131,19 +133,19 @@ end;
 
 function TFishTask.__reportProgress(timeRan: integer): extended;
 begin
-  self.__reportFishingProgress('Trout', self.troutCaught, 70, timeRan);
-  self.__reportFishingProgress('Salmon', self.itemsGained, self.xpPerItem, timeRan);
+  self.__reportFishingProgress('Trout', self.troutCaught, 50, timeRan);
+  self.__reportFishingProgress('Salmon', self.salmonCaught, 70, timeRan);
   writeLn(formatProgressLine(
     'Total fish caught: %d (%d/hr)',
-    self.troutCaught + self.itemsGained,
+    self.itemsGained,
     timeRan
   ));
   writeLn(formatProgressLine(
     'Total XP gained from catching fish: %d (%d/hr)',
-    round(self.itemsGained * self.xpPerItem + self.troutCaught * 70),
+    round(self.salmonCaught * 70 + self.troutCaught * 50),
     timeRan
   ));
-  exit(self.itemsGained * self.xpPerItem + self.troutCaught * 70);
+  exit(self.salmonCaught * 70 + self.troutCaught * 50);
 end;
 
 function FishTask(
@@ -154,7 +156,7 @@ var task: ^TFishTask;
 begin
   new(task);
   task^.init('Fish', location, tries, 90, pathToTask, task^.__fish, task^.__reportProgress);
-  task^.troutCaught := 0;
+  task^.troutCaught := task^.salmonCaught := 0;
   task^.fishingSpots := fishingSpots;
   exit(task);
 end;

@@ -21,8 +21,10 @@ var
 begin
   self.name := between('<activity name="', '">', data);
   data := between('<activity name="', '</activity>', data);
-  taskData := multiBetween(data, '<task ', '</task>');
+  if pos('<quota>', data) > 0 then
+    self.quota := strToInt(between('<quota>', '</quota>', data));
 
+  taskData := multiBetween(data, '<task ', '</task>');
   for i := 0 to high(taskData) do
     self.appendTask(Task(
       between('name="', '">', taskData[i]),

@@ -5,15 +5,10 @@ type TActivity = record
   name: string;
   tasks: TTaskList;
   setup: function(): boolean of object;
+  quota: integer;
 end;
 
 type PActivity = ^TActivity;
-
-{TODO: Implement this somehow..}
-function TActivity.isDone(): boolean;
-begin
-  exit(false);
-end;
 
 procedure TActivity.appendTask(task: PTask);
 begin
@@ -24,6 +19,17 @@ procedure TActivity.clear();
 begin
   self.tasks.clear();
   self.setup := nil;
+end;
+
+function TActivity.isDone(): boolean;
+var i, items: integer = 0;
+begin
+  if self.quota = 0 then exit(false);
+
+  for i := 0 to high(self.tasks) do
+    items += self.tasks[i]^.itemsGained;
+
+  exit(items >= self.quota);
 end;
 
 type TActivityList = array of PActivity;
