@@ -1,7 +1,7 @@
 {$include_once ../core/activity.simba}
-{$include_once ../tasks/TBankTask.simba}
-{$include_once ../tasks/TCookTask.simba}
-{$include_once ../tasks/TFishTask.simba}
+{$include_once ../../tasks/TBankTask.simba}
+{$include_once ../../tasks/TCookTask.simba}
+{$include_once ../../tasks/TFishTask.simba}
 {$f-}
 
 function Task(name: string; args: TStringArray): PTask;

@@ -2,7 +2,7 @@ program NoobOMaticChef;
 {$DEFINE SMART}
 
 {$i akarigar/engine.simba}
-{$i akarigar/lib/util/loader.simba}
+{$i akarigar/engine/util/loader.simba}
 
 {$ContinueCase ON}
 {$f-}

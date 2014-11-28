@@ -1,0 +1,40 @@
+{$include_once srl-6/srl.simba}
+
+{$include_once SPS/lib/sps-rs3.simba}
+{$f-}
+
+type TPlayerManager = record
+  area: TSPSArea;
+end;
+
+var playerManager: TPlayerManager;
+
+{
+  Tries to walk to the given point in a straight line.
+}
+function TPlayerManager.walkTo(dest: TPoint): boolean;
+var
+  dx, dy, stepX, stepY, i: integer;
+  p: TPoint;
+  path: TPointArray;
+begin
+  p := self.area.getPlayerPos();
+  if (p.x = -1) or (p.y = -1) or (dest.x = -1) or (dest.y = -1) then exit(false);
+  dx := dy := 20;
+  if p.x > dest.x then dx *= -1;
+  if p.y > dest.y then dy *= -1;
+  stepX := floor(abs((dest.x - p.x) / dx));
+  stepY := floor(abs((dest.y - p.y) / dy));
+  if stepX < stepY then setLength(path, stepY + 1)
+  else setLength(path, stepX + 1);
+
+  for i := 0 to high(path) do
+  begin
+    if i < stepX then p.x += dx
+    else p.x := dest.x;
+    if i < stepY then p.y += dy
+    else p.y := dest.y;
+    path[i] := Point(p.x, p.y);
+  end;
+  exit(self.area.walkPath(path));
+end;

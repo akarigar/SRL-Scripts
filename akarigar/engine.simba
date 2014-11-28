@@ -3,11 +3,11 @@
 
 {$include_once SPS/lib/sps-rs3.simba}
 
-{$include_once lib/core/activity.simba}
-{$include_once lib/core/activitymanager.simba}
-{$include_once lib/core/task.simba}
-{$include_once lib/util/bank.simba}
-{$include_once lib/util/util.simba}
+{$include_once engine/core/activity.simba}
+{$include_once engine/core/activitymanager.simba}
+{$include_once engine/core/task.simba}
+{$include_once engine/util/bank.simba}
+{$include_once engine/util/util.simba}
 {$f-}
 
 { This is just a very initial design, it is missing some key things
