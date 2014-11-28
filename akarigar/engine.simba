@@ -1,13 +1,11 @@
 {$include_once srl-6/srl.simba}
 {$include_once srl-6/lib/misc/srlplayerform.simba}
 
-{$include_once SPS/lib/sps-rs3.simba}
-
 {$include_once engine/core/activity.simba}
 {$include_once engine/core/activitymanager.simba}
+{$include_once engine/core/playermanager.simba}
 {$include_once engine/core/task.simba}
 {$include_once engine/util/bank.simba}
-{$include_once engine/util/util.simba}
 {$f-}
 
 { This is just a very initial design, it is missing some key things
@@ -15,19 +13,6 @@
   finalized. I'm going to be adding things as needed. I'll be moving things out
   of this and making their own files as they become big.
 }
-
-const
-  // Integers
-  P_BREAK_COUNT := 99;
-  P_BREAK_LENGTH := P_BREAK_COUNT - 1;
-  P_LOOP_COUNT := P_BREAK_LENGTH - 1;
-  P_NEXT_BREAK := P_LOOP_COUNT - 1;
-  P_PLAY_TIME := P_NEXT_BREAK - 1;
-  P_TIME_BREAKED := P_PLAY_TIME - 1;
-  P_TIME_RAN := P_TIME_BREAKED - 1;
-
-  // Booleans
-  P_TAKE_BREAKS := 99;
 
 type
   PEngine = ^TEngine;
@@ -40,9 +25,7 @@ type
     __activityManager: TActivityManager;
   end;
 
-var
-  engine: TEngine = [nil, nil, nil, [nil, nil]];
-  currentArea: TSPSArea;
+var engine: TEngine = [nil, nil, nil, [nil, nil]];
 
 // Setters =====================================================================
 
@@ -68,7 +51,7 @@ end;
 
 function TEngine.loadArea(mapName: string): TEngine;
 begin
-  currentArea.setup(mapName, RUNESCAPE_OTHER);
+  playerManager.loadArea(mapName);
   exit(self);
 end;
 
@@ -101,129 +84,6 @@ begin
     writeLn(formatProgressLine('Total XP: %d (%d/hr)', round(totalXp), timeRan));
     writeLn('================================================================');
   end;
-end;
-
-function TEngine.randomlyWait(min: integer = 250; max: integer = 750): boolean;
-begin
-  wait(gaussRangeInt(min, max));
-  exit(true);
-end;
-
-procedure TEngine.takeBreak(time: integer);
-var
-  timeRemaining: integer;
-  timer: TTimeMarker;
-begin
-  with players[currentPlayer] do
-  begin
-    timeRemaining := time := getGaussRangePercentage(time);
-    writeLn('Taking a break for ', msToTime(timeRemaining, TIME_SHORT));
-
-    if isLoggedIn() then
-      if Random() > 0.8 then logout()
-      else exitToLobby();
-
-    timer.start();
-    while (timeRemaining := time - timer.getTime()) > 45000 do
-    begin
-      writeLn('Break finishes in ', msToTime(timeRemaining, TIME_SHORT));
-      wait(45000);
-    end;
-    if timeRemaining > 0 then
-      wait(timeRemaining);
-
-
-    inc(integers[P_TIME_BREAKED], timer.getTime());
-    inc(integers[P_BREAK_COUNT]);
-    integers[P_NEXT_BREAK] := getGaussRangePercentage(integers[P_PLAY_TIME], 0.2);
-    writeLn('Break finished. Resuming script');
-  end;
-end;
-
-function TEngine.useObject(
-  color, tolerance: integer;
-  colorSettings: TColorSettings;
-  bounds: TBox;
-  midPoint: TPoint;
-  overText: TStringArray
-): boolean;
-var
-  i, x, y: Integer;
-  tpa: TPointArray;
-  atpa: T2DPointArray;
-begin
-  if not findColorsSpiralTolerance(x, y, tpa, color, bounds, tolerance, colorSettings) then
-    exit(false);
-
-  mainscreen.filterPointsPlayer(tpa);
-  atpa := tpa.toATPA(25, 25);
-  if midPoint.x = -1 or midPoint.y = -1 then
-    atpa.sortBySize()
-  else
-    atpa.sortFromMidPoint(midPoint);
-
-  for i := 0 to high(atpa) do
-  begin
-    mouseBox(atpa[i].getBounds());
-    if self.randomlyWait() and isMouseOverText(overText)  then
-    begin
-      fastClick(mouse_left);
-      exit(self.randomlyWait() and minimap.waitPlayerMoving());
-    end;
-  end;
-  exit(false);
-end;
-
-function TEngine.useObject(
-  color, tolerance: integer;
-  colorSettings: TColorSettings;
-  bounds: TBox;
-  midPoint: TPoint;
-  overText: TStringArray;
-  tries: integer
-): boolean; overload;
-var i: integer;
-begin
-  result := false;
-  for i := 0 to tries - 1 do
-    if self.useObject(color, tolerance, colorSettings, bounds, midPoint, overText) then
-      exit(true);
-end;
-
-function TEngine.walkPath(path: TPointArray): boolean;
-begin
-  if length(path) = 0 then exit(true);
-  exit(currentArea.walkPath(path) or self.walkTo(path[high(path)]));
-end;
-
-{
-  Tries to walk to the given point in a straight line.
-}
-function TEngine.walkTo(dest: TPoint): boolean;
-var
-  dx, dy, stepX, stepY, i: integer;
-  p: TPoint;
-  path: TPointArray;
-begin
-  p := currentArea.getPlayerPos();
-  if (p.x = -1) or (p.y = -1) or (dest.x = -1) or (dest.y = -1) then exit(false);
-  dx := dy := 20;
-  if p.x > dest.x then dx *= -1;
-  if p.y > dest.y then dy *= -1;
-  stepX := floor(abs((dest.x - p.x) / dx));
-  stepY := floor(abs((dest.y - p.y) / dy));
-  if stepX < stepY then setLength(path, stepY + 1)
-  else setLength(path, stepX + 1);
-
-  for i := 0 to high(path) do
-  begin
-    if i < stepX then p.x += dx
-    else p.x := dest.x;
-    if i < stepY then p.y += dy
-    else p.y := dest.y;
-    path[i] := Point(p.x, p.y);
-  end;
-  exit(currentArea.walkPath(path));
 end;
 
 procedure TEngine.__declarePlayers();
@@ -262,7 +122,7 @@ var
 begin
   wait(gaussRangeInt(0, 1200));
   writeLn('Starting task "', task^.name, '"');
-  if not self.walkPath(task^.pathToTask) then exit(false);
+  if not playerManager.walkPath(task^.pathToTask) then exit(false);
   status := task^.run();
   writeLn('Task "', task^.name, '" finished with status ', status);
   exit(status > TTaskStatus.ERR);
@@ -314,7 +174,7 @@ begin
 
     with players[currentPlayer] do
     begin
-      while isLoggedIn() and isActive and (not self.__activity^.isDone()) and
+      while playerManager.isActive() and (not self.__activity^.isDone()) and
           ((not booleans[P_TAKE_BREAKS]) or (timer.getTime() <= integers[P_NEXT_BREAK])) do
       begin
         isActive := self.__execute(self.__activity^.tasks);
@@ -331,7 +191,7 @@ begin
 
     if players[currentPlayer].isActive then
       if timer.getTime() > players[currentPlayer].integers[P_NEXT_BREAK] then
-        self.takeBreak(players[currentPlayer].integers[P_BREAK_LENGTH])
+        playerManager.takeBreak()
     else if players.getActive() > 0 then
       players.randomNext(false);
 

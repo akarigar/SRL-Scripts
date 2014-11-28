@@ -1,4 +1,4 @@
-{$include_once ../engine.simba}
+{$include_once ../engine/core/playermanager.simba}
 {$f-}
 
 type TSmithTask = record(TTask)
@@ -18,7 +18,7 @@ begin
   if i >= self.tries then exit(TTaskStatus.ERR);
   barsCount := tabBackpack.count();
 
-  if not engine.useObject(
+  if not playerManager.useObject(
     6780019, // color
     11, // tolerance
     colorSetting(2, 0.83, 0.40), //colorSettings
@@ -28,18 +28,18 @@ begin
     self.tries // tries
   ) then exit(TTaskStatus.ERR);
 
-  while (engine.randomlyWait(500, 1000)) and (inc(i) <= self.tries) and
+  while (playerManager.randomlyWait(500, 1000)) and (inc(i) <= self.tries) and
         (not productionScreen.selectBox(self.slot, [self.itemText])) do;
   if (i >= self.tries) then exit(TTaskStatus.ERR);
   i := 0;
 
-  while (engine.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
+  while (playerManager.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
   if i >= self.tries then exit(TTaskStatus.ERR);
   i := 0;
 
   timer.start();
   while (progressScreen.isOpen(1500)) and (timer.getTime() < gaussRangeInt(110000, 130000)) do
-    ;//doAntiBan(); // TODO: Add a way to do anti ban in engine.
+    ;//doAntiBan(); // TODO: Add a way to do anti ban in playerManager.
   if progressScreen.isOpen() then exit(TTaskStatus.ERR);
 
   // If we're making stackable items, then we get one item per bar.

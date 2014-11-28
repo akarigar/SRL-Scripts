@@ -1,4 +1,4 @@
-{$include_once ../engine.simba}
+{$include_once ../engine/core/playermanager.simba}
 {$f-}
 
 type TSmeltTask = TTask;
@@ -6,7 +6,7 @@ type TSmeltTask = TTask;
 function TSmeltTask.__smelt(): TTaskStatus;
 var i: integer = 0;
 begin
-  if not engine.useObject(
+  if not playerManager.useObject(
     1121716, // color
     13, // tolerance
     colorSetting(2, 0.04, 0.34), // colorSettings
@@ -16,7 +16,7 @@ begin
     self.tries // tries
   ) then exit(TTaskStatus.ERR);
 
-  while (engine.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
+  while (playerManager.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
   if (i >= self.tries) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 130000))) then
     exit(TTaskStatus.ERR);
 

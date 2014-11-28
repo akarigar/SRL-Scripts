@@ -1,13 +1,136 @@
 {$include_once srl-6/srl.simba}
 
 {$include_once SPS/lib/sps-rs3.simba}
+
+{$include_once ../util/util.simba}
 {$f-}
+
+const
+  // Integers
+  P_BREAK_COUNT := 99;
+  P_BREAK_LENGTH := P_BREAK_COUNT - 1;
+  P_LOOP_COUNT := P_BREAK_LENGTH - 1;
+  P_NEXT_BREAK := P_LOOP_COUNT - 1;
+  P_PLAY_TIME := P_NEXT_BREAK - 1;
+  P_TIME_BREAKED := P_PLAY_TIME - 1;
+  P_TIME_RAN := P_TIME_BREAKED - 1;
+
+  // Booleans
+  P_TAKE_BREAKS := 99;
 
 type TPlayerManager = record
   area: TSPSArea;
 end;
 
+var currentArea: TSPSArea;
+
 var playerManager: TPlayerManager;
+
+function TPlayerManager.isActive(): boolean;
+begin
+  exit(isLoggedIn() and players[currentPlayer].isActive);
+end;
+
+procedure TPlayerManager.loadArea(mapName: string);
+begin
+  currentArea.setup(mapName, RUNESCAPE_OTHER);
+  self.area := currentArea;
+end;
+
+function TPlayerManager.randomlyWait(min: integer = 250; max: integer = 750): boolean;
+begin
+  wait(gaussRangeInt(min, max));
+  exit(true);
+end;
+
+procedure TPlayerManager.takeBreak();
+var
+  time, timeRemaining: integer;
+  timer: TTimeMarker;
+begin
+  with players[currentPlayer] do
+  begin
+    timeRemaining := time := getGaussRangePercentage(
+      players[currentPlayer].integers[P_BREAK_LENGTH]
+    );
+    writeLn('Taking a break for ', msToTime(timeRemaining, TIME_SHORT));
+
+    if isLoggedIn() then
+      if Random() > 0.8 then logout()
+      else exitToLobby();
+
+    timer.start();
+    while (timeRemaining := time - timer.getTime()) > 45000 do
+    begin
+      writeLn('Break finishes in ', msToTime(timeRemaining, TIME_SHORT));
+      wait(45000);
+    end;
+    if timeRemaining > 0 then
+      wait(timeRemaining);
+
+
+    inc(integers[P_TIME_BREAKED], timer.getTime());
+    inc(integers[P_BREAK_COUNT]);
+    integers[P_NEXT_BREAK] := getGaussRangePercentage(integers[P_PLAY_TIME], 0.2);
+    writeLn('Break finished. Resuming script');
+  end;
+end;
+
+function TPlayerManager.useObject(
+  color, tolerance: integer;
+  colorSettings: TColorSettings;
+  bounds: TBox;
+  midPoint: TPoint;
+  overText: TStringArray
+): boolean;
+var
+  i, x, y: Integer;
+  tpa: TPointArray;
+  atpa: T2DPointArray;
+begin
+  if not findColorsSpiralTolerance(x, y, tpa, color, bounds, tolerance, colorSettings) then
+    exit(false);
+
+  mainscreen.filterPointsPlayer(tpa);
+  atpa := tpa.toATPA(25, 25);
+  if midPoint.x = -1 or midPoint.y = -1 then
+    atpa.sortBySize()
+  else
+    atpa.sortFromMidPoint(midPoint);
+
+  for i := 0 to high(atpa) do
+  begin
+    mouseBox(atpa[i].getBounds());
+    if self.randomlyWait() and isMouseOverText(overText)  then
+    begin
+      fastClick(mouse_left);
+      exit(self.randomlyWait() and minimap.waitPlayerMoving());
+    end;
+  end;
+  exit(false);
+end;
+
+function TPlayerManager.useObject(
+  color, tolerance: integer;
+  colorSettings: TColorSettings;
+  bounds: TBox;
+  midPoint: TPoint;
+  overText: TStringArray;
+  tries: integer
+): boolean; overload;
+var i: integer;
+begin
+  result := false;
+  for i := 0 to tries - 1 do
+    if self.useObject(color, tolerance, colorSettings, bounds, midPoint, overText) then
+      exit(true);
+end;
+
+function TPlayerManager.walkPath(path: TPointArray): boolean;
+begin
+  if length(path) = 0 then exit(true);
+  exit(self.area.walkPath(path) or self.walkTo(path[high(path)]));
+end;
 
 {
   Tries to walk to the given point in a straight line.

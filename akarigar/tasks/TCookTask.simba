@@ -1,4 +1,4 @@
-{$include_once ../engine.simba}
+{$include_once ../engine/core/playermanager.simba}
 {$f-}
 
 type TCookTask = record(TTask)
@@ -14,7 +14,7 @@ function TCookTask.__cook(): TTaskStatus;
 var i, x, y, rawCount: Integer = 0;
 begin
   rawCount := tabBackpack.count();
-  if not engine.useObject(
+  if not playerManager.useObject(
     self.objectSettings.color, // color
     self.objectSettings.tolerance, // tolerance
     colorSetting(2, self.objectSettings.hue, self.objectSettings.sat), // colorSettings
@@ -24,7 +24,7 @@ begin
     self.tries // tries
   ) then exit(TTaskStatus.ERR);
 
-  while (engine.randomlyWait(1000, 1500)) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
+  while (playerManager.randomlyWait(1000, 1500)) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
   if (i >= self.tries) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 1300000)))
     then exit(TTaskStatus.ERR);
 

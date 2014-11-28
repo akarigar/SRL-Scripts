@@ -1,4 +1,4 @@
-{$include_once ../engine.simba}
+{$include_once ../engine/core/playermanager.simba}
 {$f-}
 
 var __troutDtm: integer;
@@ -48,8 +48,8 @@ function TFishTask.__tryFishing(): boolean;
 var i: integer;
 begin
   for i := 0 to length(self.fishingSpots) * 2 - 1 do
-    if engine.walkTo(self.fishingSpots[i mod length(self.fishingSpots)]) and
-       engine.useObject(
+    if playerManager.walkTo(self.fishingSpots[i mod length(self.fishingSpots)]) and
+       playerManager.useObject(
         13220522, // color
         10, // tolerance
         colorSetting(2, 0.38, 1.47), // colorSettings
@@ -83,7 +83,7 @@ begin
         timer.start();
       end;
     if SRL_Events[EVENT_ANTIBAN] <> nil then SRL_Events[EVENT_ANTIBAN]()
-    else engine.randomlyWait(750, 1250);
+    else playerManager.randomlyWait(750, 1250);
   end;
   exit(true);
 end;
@@ -98,7 +98,7 @@ begin
   timer.start();
   while (timer.getTime() < 30000) and (self.__hasFeathers()) and (not tabBackpack.isFull()) do
   begin
-    if engine.randomlyWait() and self.__goFish() then
+    if playerManager.randomlyWait() and self.__goFish() then
     begin
       timer.reset();
       timer.start();

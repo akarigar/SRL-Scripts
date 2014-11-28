@@ -1,4 +1,4 @@
-{$include_once ../engine.simba}
+{$include_once ../engine/core/playermanager.simba}
 {$f-}
 
 type TBankTask = record(TTask)
@@ -8,12 +8,12 @@ end;
 function TBankTask.__loadPreset(): TTaskStatus;
 var i: integer = 0;
 begin
-  while (engine.randomlyWait()) and (not bankscreen.open(self.bankType)) and (inc(i) < self.tries) do;
+  while (playerManager.randomlyWait()) and (not bankscreen.open(self.bankType)) and (inc(i) < self.tries) do;
   if i >= self.tries then exit(TTaskStatus.ERR);
   i := 0;
 
-  while (engine.randomlyWait()) and (not bankScreen.clickButton(self.button)) and (inc(i) < self.tries) do;
-  if (i >= self.tries) or (not engine.randomlyWait()) or (tabBackpack.isEmpty()) then
+  while (playerManager.randomlyWait()) and (not bankScreen.clickButton(self.button)) and (inc(i) < self.tries) do;
+  if (i >= self.tries) or (not playerManager.randomlyWait()) or (tabBackpack.isEmpty()) then
     exit(TTaskStatus.ERR);
   exit(TTaskStatus.DONE);
 end;
