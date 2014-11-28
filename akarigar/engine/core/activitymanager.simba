@@ -1,3 +1,4 @@
+{$include_once ../util/loader.simba}
 {$include_once ../util/util.simba}
 {$include_once activity.simba}
 {$include_once playermanager.simba}
@@ -7,7 +8,6 @@
 const __PAGE__ = 'http://akarigar.com/srl/nextActivity.php';
 
 type TActivityManager = record
-  __createActivity: function(data: string): PActivity;
   __currentActivity: PActivity;
   __previousStatus: TTaskStatus;
 end;
@@ -33,7 +33,7 @@ end;
 function TActivityManager.next(): PActivity;
 begin
   self.destroy();
-  self.__currentActivity := self.__createActivity(getPage(__PAGE__));
+  self.__currentActivity := Activity(getPage(__PAGE__));
   exit(self.getCurrentActivity());
 end;
 
@@ -87,11 +87,6 @@ begin
     if self.__previousStatus <= TTaskStatus.ERR then exit(false);
   end;
   exit(true);
-end;
-
-procedure TActivityManager.setActivityCreator(f: function(s: string): PActivity);
-begin
-  self.__createActivity := f;
 end;
 
 {$f+}

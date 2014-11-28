@@ -1,10 +1,8 @@
 {$include_once srl-6/srl.simba}
 {$include_once srl-6/lib/misc/srlplayerform.simba}
 
-{$include_once engine/core/activity.simba}
 {$include_once engine/core/activitymanager.simba}
 {$include_once engine/core/playermanager.simba}
-{$include_once engine/core/task.simba}
 {$include_once engine/util/bank.simba}
 {$f-}
 
@@ -24,15 +22,9 @@ type
     __activityManager: TActivityManager;
   end;
 
-var engine: TEngine = [nil, nil, [nil, nil]];
+var engine: TEngine = [nil, nil, [nil, 0]];
 
 // Setters =====================================================================
-
-function TEngine.setActivityCreator(f: function(s: string): PActivity): TEngine;
-begin
-  self.__activityManager.setActivityCreator(f);
-  exit(self);
-end;
 
 function TEngine.setAntiBan(antiBan: procedure()): TEngine;
 begin
