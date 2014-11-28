@@ -74,4 +74,9 @@ begin
   setLength(self, 0);
 end;
 
+function TTaskList.size(): integer;
+begin
+  exit(length(self));
+end;
+
 {$f+}

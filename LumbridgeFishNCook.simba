@@ -1,4 +1,4 @@
-program NoobOMaticChef;
+program LumbridgeFishNCook;
 {$DEFINE SMART}
 
 {$i akarigar/engine.simba}

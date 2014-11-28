@@ -21,11 +21,10 @@ type
     antiBan: procedure();
     declarePlayers: procedure(engine: PEngine);
 
-    __activity: PActivity;
     __activityManager: TActivityManager;
   end;
 
-var engine: TEngine = [nil, nil, nil, [nil, nil]];
+var engine: TEngine = [nil, nil, [nil, nil]];
 
 // Setters =====================================================================
 
@@ -55,37 +54,6 @@ begin
   exit(self);
 end;
 
-procedure TEngine.printProgress(timeRan: integer);
-var
-  i: integer;
-  totalXp: extended = 0;
-  task: PTask;
-begin
-  with players[currentPlayer] do
-  begin
-    writeLn('================================================================');
-    if length(playerForm.name) = 0 then
-      writeLn('Progress Report')
-    else
-      writeLn(playerForm.name, ' Progress Report');
-    writeLn('Player[', currentPlayer, ']: ', nickname);
-    writeLn('Played for ', msToTime(timeRan, TIME_FORMAL));
-    writeLn('Breaked for ', msToTime(integers[P_TIME_BREAKED], TIME_FORMAL),' (',
-            integers[P_BREAK_COUNT], ' breaks)');
-
-    writeLn('Activity ', self.__activity^.name, ' looped ', integers[P_LOOP_COUNT], ' times');
-    for i := 0 to high(self.__activity^.tasks) do
-    begin
-      task := self.__activity^.tasks[i];
-      if (task^.xpPerItem <= 0) or (task^.reportProgress = nil) then continue;
-      totalXp += task^.reportProgress(timeRan);
-    end;
-
-    writeLn(formatProgressLine('Total XP: %d (%d/hr)', round(totalXp), timeRan));
-    writeLn('================================================================');
-  end;
-end;
-
 procedure TEngine.__declarePlayers();
 var
   i: integer;
@@ -112,28 +80,7 @@ end;
 procedure TEngine.__destroy();
 begin
   writeLn('Freeing engine resources');
-  self.__activity := nil;
   self.__activityManager.destroy();
-end;
-
-function TEngine.__execute(task: PTask): boolean;
-var
-  status: TTaskStatus;
-begin
-  wait(gaussRangeInt(0, 1200));
-  writeLn('Starting task "', task^.name, '"');
-  if not playerManager.walkPath(task^.pathToTask) then exit(false);
-  status := task^.run();
-  writeLn('Task "', task^.name, '" finished with status ', status);
-  exit(status > TTaskStatus.ERR);
-end;
-
-function TEngine.__execute(tasks: TTaskList): boolean; overload;
-var currentTask: integer;
-begin
-  for currentTask := 0 to high(tasks) do
-    if not self.__execute(tasks[currentTask]) then exit(false);
-  exit(true);
 end;
 
 procedure TEngine.__initForm();
@@ -170,24 +117,24 @@ begin
     mainscreen.setAngle(MS_ANGLE_HIGH);
 
     // Setup activity if needed & only start loop if everything is fine.
-    self.__activity := self.__activityManager.next();
+    self.__activityManager.next();
 
     with players[currentPlayer] do
     begin
-      while playerManager.isActive() and (not self.__activity^.isDone()) and
+      while playerManager.isActive() and (not self.__activityManager.isActivityDone()) and
           ((not booleans[P_TAKE_BREAKS]) or (timer.getTime() <= integers[P_NEXT_BREAK])) do
       begin
-        isActive := self.__execute(self.__activity^.tasks);
+        isActive := self.__activityManager.run();
         inc(integers[P_LOOP_COUNT]);
 
-        self.printProgress(integers[P_TIME_RAN] + timer.getTime());
+        self.__activityManager.printProgress(integers[P_TIME_RAN] + timer.getTime());
       end;
     end;
-    writeLn('isDone? ', self.__activity^.isDone());
+    writeLn('isDone? ', self.__activityManager.isActivityDone());
     inc(players[currentPlayer].integers[P_TIME_RAN], timer.getTime());
 
-    if self.__activity^.isDone() then
-      self.__activity := self.__activityManager.next()
+    if self.__activityManager.isActivityDone() then
+      self.__activityManager.next()
 
     if players[currentPlayer].isActive then
       if timer.getTime() > players[currentPlayer].integers[P_NEXT_BREAK] then
