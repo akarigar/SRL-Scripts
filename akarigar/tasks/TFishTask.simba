@@ -133,6 +133,9 @@ end;
 
 function TFishTask.__reportProgress(timeRan: integer): extended;
 begin
+  playerManager.saveResource('Raw trout', self.troutCaught);
+  playerManager.saveResource('Raw salmon', self.salmonCaught);
+
   self.__reportFishingProgress('Trout', self.troutCaught, 50, timeRan);
   self.__reportFishingProgress('Salmon', self.salmonCaught, 70, timeRan);
   writeLn(formatProgressLine(

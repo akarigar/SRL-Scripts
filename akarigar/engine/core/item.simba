@@ -1,0 +1,7 @@
+{$f-}
+
+type TItem = record
+  id: integer;
+  name: string;
+  amount: integer;
+end;
