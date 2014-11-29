@@ -54,34 +54,19 @@ begin
   exit(self.itemsGained * self.xpPerItem);
 end;
 
-function CookTask(
-  location, tries: integer;
-  xpPerItem: extended;
-  pathToTask: TPointArray
-): ^TCookTask;
+function CookTask(args: TStringArray): ^TCookTask;
 var task: ^TCookTask;
 begin
   new(task);
-  task^.init('Cook', location, tries, xpPerItem, pathToTask, task^.__cook, task^.__reportProgress);
+  task^.init('Cook', args, 70, task^.__cook, task^.__reportProgress);
   task^.itemsBurned := 0;
 
-  case location of
+  case task^.location of
     LOCATION_AL_KHARID: task^.objectSettings := [3029703, 8, 0.17, 2.07];
     LOCATION_LUMBRIDGE: task^.objectSettings := [2451907, 4, 0.35, 1.71];
   end;
 
   exit(task);
-end;
-
-function CookTask(args: TStringArray): ^TCookTask; overload;
-begin
-  if length(args) <> 4 then exit(nil);
-  exit(CookTask(
-    strToInt(args[0]),
-    strToInt(args[1]),
-    strToFloat(args[2]),
-    strToTPA(args[3])
-  ));
 end;
 
 {$f+}

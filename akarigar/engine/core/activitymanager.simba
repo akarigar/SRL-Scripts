@@ -5,7 +5,7 @@
 {$include_once task.simba}
 {$f-}
 
-const __PAGE__ = 'http://akarigar.com/srl/nextActivity.php';
+const __PAGE__ = 'http://akarigar.com/srl/next.php';
 
 type TActivityManager = record
   __currentActivity: PActivity;
@@ -80,7 +80,7 @@ begin
     wait(gaussRangeInt(0, 1200));
 
     writeLn('Starting task "', task^.name, '"');
-    if not playerManager.walkPath(task^.pathToTask) then exit(false);
+    if not playerManager.walkPath(task^.pathToObject) then exit(false);
     self.__previousStatus := task^.run();
     writeLn('Task "', task^.name, '" finished with status ', status);
 

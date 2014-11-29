@@ -6,7 +6,6 @@ var __troutDtm: integer;
 type TFishTask = record(TTask)
   troutCaught: integer;
   salmonCaught: integer;
-  fishingSpots: TPointArray;
 end;
 
 function TFishTask.__getRiverBounds(): TBox;
@@ -47,8 +46,8 @@ end;
 function TFishTask.__tryFishing(): boolean;
 var i: integer;
 begin
-  for i := 0 to length(self.fishingSpots) * 2 - 1 do
-    if playerManager.walkTo(self.fishingSpots[i mod length(self.fishingSpots)]) and
+  for i := 0 to length(self.objectLocations) * 2 - 1 do
+    if playerManager.walkTo(self.objectLocations[i mod length(self.objectLocations)]) and
        playerManager.useObject(
         13220522, // color
         10, // tolerance
@@ -151,28 +150,13 @@ begin
   exit(self.salmonCaught * 70 + self.troutCaught * 50);
 end;
 
-function FishTask(
-  location, tries: integer;
-  pathToTask, fishingSpots: TPointArray
-): ^TFishTask;
+function FishTask(args: TStringArray): ^TFishTask;
 var task: ^TFishTask;
 begin
   new(task);
-  task^.init('Fish', location, tries, 90, pathToTask, task^.__fish, task^.__reportProgress);
+  task^.init('Fish', args, 90, task^.__fish, task^.__reportProgress);
   task^.troutCaught := task^.salmonCaught := 0;
-  task^.fishingSpots := fishingSpots;
   exit(task);
-end;
-
-function FishTask(args: TStringArray): ^TFishTask; overload;
-begin
-  if length(args) <> 4 then exit(nil);
-  exit(FishTask(
-    strToInt(args[0]),
-    strToInt(args[1]),
-    strToTPA(args[2]),
-    strToTPA(args[3])
-  ));
 end;
 
 procedure __freeFishDtm();

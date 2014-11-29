@@ -2,50 +2,39 @@
 {$f-}
 
 type TBankTask = record(TTask)
-  bankType, button: integer;
+  bankType: integer;
 end;
 
 function TBankTask.__loadPreset(): TTaskStatus;
 var i: integer = 0;
 begin
-  while (playerManager.randomlyWait()) and (not bankscreen.open(self.bankType)) and (inc(i) < self.tries) do;
+  while (playerManager.randomlyWait()) and
+        (not bankscreen.open(self.bankType)) and
+        (inc(i) < self.tries) do;
   if i >= self.tries then exit(TTaskStatus.ERR);
   i := 0;
 
-  while (playerManager.randomlyWait()) and (not bankScreen.clickButton(self.button)) and (inc(i) < self.tries) do;
+  while (playerManager.randomlyWait()) and
+        (not bankScreen.clickButton(self.flag)) and
+        (inc(i) < self.tries) do;
   if (i >= self.tries) or (not playerManager.randomlyWait()) or (tabBackpack.isEmpty()) then
     exit(TTaskStatus.ERR);
   exit(TTaskStatus.DONE);
 end;
 
-function BankTask(
-  location, tries, button: integer;
-  pathToBank: TPointArray
-): ^TBankTask;
+function BankTask(args: TStringArray): ^TBankTask;
 var task: ^TBankTask;
 begin
   new(task);
-  task^.init('Bank', location, tries, 0, pathToBank, task^.__loadPreset);
-  task^.button := button;
+  task^.init('Bank', args, 0, task^.__loadPreset);
 
-  case location of
+  case task^.location of
     LOCATION_AL_KHARID: task^.bankType := BANK_NPC_GREEN;
     LOCATION_LUMBRIDGE: task^.bankType := BANK_CHEST_LUMBRIDGE;
     else task^.bankType := BANK_BOOTH;
   end;
 
   exit(task);
-end;
-
-function BankTask(args: TStringArray): ^TBankTask; overload;
-begin
-  if length(args) <> 4 then exit(nil);
-  exit(BankTask(
-    strToInt(args[0]),
-    strToInt(args[1]),
-    strToInt(args[2]),
-    strToTPA(args[3])
-  ));
 end;
 
 {$f+}

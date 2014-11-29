@@ -6,11 +6,6 @@ program LumbridgeFishNCook;
 {$ContinueCase ON}
 {$f-}
 
-const
-  P_SAFE_LEVEL := 0;
-  P_ITEM_XP := 1;
-  FAIL_MAX := 25;
-
 procedure doAntiBan();
 begin
   case random(600) of

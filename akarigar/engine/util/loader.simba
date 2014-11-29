@@ -7,9 +7,9 @@
 function Task(name: string; args: TStringArray): PTask;
 begin
   case name of
-    'BankTask': exit(BankTask(args));
-    'CookTask': exit(CookTask(args));
-    'FishTask': exit(FishTask(args));
+    'Bank': exit(BankTask(args));
+    'Cook': exit(CookTask(args));
+    'Fish': exit(FishTask(args));
     else exit(nil);
   end;
 end;
