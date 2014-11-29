@@ -3,6 +3,10 @@
 
 type TActivity = record
   name: string;
+  requirement: record
+    items: TStringArray;
+    amounts: TIntegerArray;
+  end;
   tasks: TTaskList;
   setup: function(): boolean of object;
   quota: integer;
