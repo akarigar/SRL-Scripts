@@ -3,26 +3,13 @@
 
 type TCookTask = record(TTask)
   itemsBurned: integer;
-
-  objectSettings: record
-    color, tolerance: integer;
-    hue, sat: extended;
-  end;
 end;
 
 function TCookTask.__cook(): TTaskStatus;
 var i, x, y, rawCount: Integer = 0;
 begin
   rawCount := tabBackpack.count();
-  if not playerManager.useObject(
-    self.objectSettings.color, // color
-    self.objectSettings.tolerance, // tolerance
-    colorSetting(2, self.objectSettings.hue, self.objectSettings.sat), // colorSettings
-    mainscreen.getBounds(), // bounds
-    Point(-1, -1), // midPoint
-    ['Cook-at', 'ook', '-at', 'range'], // overText
-    self.tries // tries
-  ) then exit(TTaskStatus.ERR);
+  if not playerManager.useObject(self.objectSettings) then exit(TTaskStatus.ERR);
 
   while (playerManager.randomlyWait(1000, 1500)) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
   if (i >= self.tries) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 1300000)))
@@ -60,12 +47,6 @@ begin
   new(task);
   task^.init('Cook', args, 70, task^.__cook, task^.__reportProgress);
   task^.itemsBurned := 0;
-
-  case task^.location of
-    LOCATION_AL_KHARID: task^.objectSettings := [3029703, 8, 0.17, 2.07];
-    LOCATION_LUMBRIDGE: task^.objectSettings := [2451907, 4, 0.35, 1.71];
-  end;
-
   exit(task);
 end;
 

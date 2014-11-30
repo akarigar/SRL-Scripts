@@ -1,3 +1,4 @@
+{$include_once objectsettings.simba}
 {$include_once ../util/util.simba}
 {$f-}
 
@@ -18,34 +19,19 @@ type TTask = record
   name: string;
   location, tries, flag, itemsGained: integer;
   xpPerItem: extended;
-  pathToObject: TPointArray;
-  objectLocations: TPointArray;
+  pathToObject, objectLocations: TPointArray;
+  objectSettings: PObjectSettings;
   run: function(): TTaskStatus of object;
   reportProgress: function(timeRan: integer): extended of object;
 end;
 
 type PTask = ^TTask;
 
-procedure TTask.init(
-  name: string;
-  location, tries, flag: integer;
-  xpPerItem: extended;
-  pathToObject, objectLocations: TPointArray;
-  run: function(): TTaskStatus of object;
-  reportProgress: function(timeRan: integer): extended of object = nil
-);
+procedure TTask.free();
 begin
-  self.name := name;
-  self.location := location;
-  self.tries := tries;
-  self.flag := flag;
-  self.itemsGained := 0;
-  self.xpPerItem := xpPerItem;
-  self.pathToObject := pathToObject;
-  self.objectLocations := objectLocations;
-  self.run := run;
-  if reportProgress = nil then self.reportProgress := self.__reportTaskProgress
-  else self.reportProgress := reportProgress;
+  if self.objectSettings = nil then exit;
+  self.objectSettings^.free();
+  dispose(self.objectSettings);
 end;
 
 procedure TTask.init(
@@ -56,22 +42,25 @@ procedure TTask.init(
   reportProgress: function(timeRan: integer): extended of object = nil
 ); overload;
 begin
-  if length(args) <> 4 then
+  if not inRange(length(args), 4, 5) then
   begin
     writeLn('ERROR incorrect number of args: ', args);
     exit;
   end;
-  self.init(
-    name, // name
-    strToInt(args[0]), // location
-    FAIL_MAX, // tries
-    strToInt(args[1]), // flag
-    xpPerItem, // xpPerItem
-    strToTPA(args[2]), // pathToObject
-    strToTPA(args[3]), // objectLocations
-    run, // run
-    reportProgress // reportProgress
-  );
+  self.name := name;
+  self.location := strToInt(args[0]);
+  self.tries := FAIL_MAX;
+  self.flag := strToInt(args[1]);
+  self.itemsGained := 0;
+  self.xpPerItem := xpPerItem;
+  self.pathToObject := strToTPA(args[2]);
+  self.objectLocations := strToTPA(args[3]);
+  if length(args) = 5 then
+    self.objectSettings := xmlToObjectSettings(args[4])
+  else self.objectSettings := nil;
+  self.run := run;
+  if reportProgress = nil then self.reportProgress := self.__reportTaskProgress
+  else self.reportProgress := reportProgress;
 end;
 
 function TTask.__reportTaskProgress(timeRan: integer): extended;
@@ -101,7 +90,10 @@ procedure TTaskList.clear();
 var i: integer;
 begin
   for i := 0 to high(self) do
+  begin
+    self[i]^.free();
     dispose(self[i]);
+  end;
   setLength(self, 0);
 end;
 

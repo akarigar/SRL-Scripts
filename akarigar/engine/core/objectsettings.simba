@@ -1,0 +1,48 @@
+{$f-}
+
+type
+  PObjectSettings = ^TObjectSettings;
+
+  TObjectSettings = record
+    sort, relation, color, tol: integer;
+    hue, sat: extended;
+    overText, optionText: TStringArray;
+    relative: PObjectSettings;
+  end;
+
+procedure TObjectSettings.free();
+begin
+  if self.relative = nil then exit;
+  self.relative^.free();
+  dispose(self.relative);
+  self.relative := nil;
+end;
+
+function xmlToObjectSettings(xml: string): PObjectSettings;
+var
+  child, relative: PObjectSettings;
+  data, args: TStringArray;
+  i: integer;
+begin
+  data := multiBetween(xml, '<obj>', '<');
+  relative := nil;
+
+  for i := high(data) downto 0 do
+  begin
+    args := explode(';', data[i]);
+    new(child);
+    child^.sort := strToInt(args[0]);
+    child^.relation := strToInt(args[1]);
+    child^.color := strToInt(args[2]);
+    child^.tol := strToInt(args[3]);
+    child^.hue := strToFloat(args[4]);
+    child^.sat := strToFloat(args[5]);
+    child^.overText := explode(',', args[6]);
+    child^.optionText := explode(',', args[7]);
+    child^.relative := relative;
+    relative := child;
+  end;
+  exit(child);
+end;
+
+{$f+}

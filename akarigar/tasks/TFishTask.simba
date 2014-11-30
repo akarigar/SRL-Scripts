@@ -26,14 +26,21 @@ var
   bounds: TBox;
   timer: TTimeMarker;
 begin
-  result := false;
   bounds := mainscreen.playerBox;
   bounds.X1 -= mainscreen.playerBox.getWidth();
   bounds.X2 -= mainscreen.playerBox.getWidth();
   timer.start();
   while timer.getTime() <= 1500 do
-    if findColorsSpiralTolerance(x, y, fishingPoints, 13220522, bounds, 10, colorSetting(2, 0.38, 1.47)) then
-      exit(true);
+    if findColorsSpiralTolerance(
+      x,
+      y,
+      fishingPoints,
+      self.objectSettings^.color,
+      bounds,
+      self.objectSettings^.tol,
+      colorSetting(2, self.objectSettings^.hue, self.objectSettings^.sat)
+    ) then exit(true);
+  exit(false);
 end;
 
 function TFishTask.__hasFeathers(): boolean;
@@ -48,15 +55,7 @@ var i: integer;
 begin
   for i := 0 to length(self.objectLocations) * 2 - 1 do
     if playerManager.walkTo(self.objectLocations[i mod length(self.objectLocations)]) and
-       playerManager.useObject(
-        13220522, // color
-        10, // tolerance
-        colorSetting(2, 0.38, 1.47), // colorSettings
-        self.__getRiverBounds(), // bounds
-        mainscreen.playerPoint, // midPoint
-        ['Lure', 'ure ', 'ure'], // overText
-        self.tries // tries
-       ) then exit(true);
+       playerManager.useObject(self.objectSettings) then exit(true);
   exit(false);
 end;
 

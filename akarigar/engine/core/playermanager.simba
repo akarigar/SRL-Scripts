@@ -3,6 +3,7 @@
 {$include_once SPS/lib/sps-rs3.simba}
 
 {$include_once item.simba}
+{$include_once objectsettings.simba}
 {$include_once ../util/util.simba}
 {$f-}
 
@@ -26,6 +27,67 @@ end;
 var currentArea: TSPSArea;
 
 var playerManager: TPlayerManager;
+
+function TPlayerManager.findObject(obj: PObjectSettings; out b: Tbox): boolean;
+var
+  i, x, y: integer;
+  tpa: TPointArray;
+  atpa: T2DPointArray;
+  bounds, relativeBounds: TBox;
+begin
+  // Figure out certain bounds
+  bounds := mainscreen.getBounds();
+  if obj^.relative <> nil then
+  begin
+    if not self.findObject(obj^.relative, relativeBounds) then exit(false);
+    if obj^.relation = 0 then
+      bounds := relativeBounds;
+  end;
+
+  // Only continue if we find potential objects
+  if not findColorsSpiralTolerance(
+    x,
+    y,
+    tpa,
+    obj^.color,
+    bounds,
+    obj^.tol,
+    colorSetting(2, obj^.hue, obj^.sat)
+  ) then exit(false);
+
+  // Filter out the player & make a sorted TPointArray
+  mainscreen.filterPointsPlayer(tpa);
+  atpa := tpa.toATPA(25, 25);
+  if obj^.sort = 0 then
+    if obj^.relation = 1 then
+      atpa.sortFromMidPoint(relativeBounds.getMiddle())
+    else atpa.sortFromMidPoint(mainscreen.playerPoint)
+  else if obj^.sort = 1 then
+    atpa.sortBySize();
+
+  // If we don't have any over text, but we found potential objects, then the
+  // entire atpa is our object.
+  if length(obj^.overText) = 0 then
+  begin
+    b := atpa.getBounds();
+    exit(true);
+  end;
+
+  // The first potential objects matching our option or over text is the object
+  // we are looking for.
+  for i := 0 to high(atpa) do
+  begin
+    b := atpa[i].getBounds();
+    mouseBox(b);
+    if self.randomlyWait() and isMouseOverText(obj^.overText) then
+    begin
+      if length(obj^.optionText) = 0 then exit(true);
+      fastClick(mouse_Right);
+      if chooseOption.optionsExist(obj^.optionText) then exit(true);
+    end;
+  end;
+  exit(false);
+end;
 
 function TPlayerManager.isActive(): boolean;
 begin
@@ -91,7 +153,6 @@ begin
     if timeRemaining > 0 then
       wait(timeRemaining);
 
-
     inc(integers[P_TIME_BREAKED], timer.getTime());
     inc(integers[P_BREAK_COUNT]);
     integers[P_NEXT_BREAK] := getGaussRangePercentage(integers[P_PLAY_TIME], 0.2);
@@ -99,54 +160,17 @@ begin
   end;
 end;
 
-function TPlayerManager.useObject(
-  color, tolerance: integer;
-  colorSettings: TColorSettings;
-  bounds: TBox;
-  midPoint: TPoint;
-  overText: TStringArray
-): boolean;
-var
-  i, x, y: Integer;
-  tpa: TPointArray;
-  atpa: T2DPointArray;
+function TPlayerManager.useObject(obj: PObjectSettings): boolean;
+var bounds: TBox;
 begin
-  if not findColorsSpiralTolerance(x, y, tpa, color, bounds, tolerance, colorSettings) then
-    exit(false);
-
-  mainscreen.filterPointsPlayer(tpa);
-  atpa := tpa.toATPA(25, 25);
-  if midPoint.x = -1 or midPoint.y = -1 then
-    atpa.sortBySize()
-  else
-    atpa.sortFromMidPoint(midPoint);
-
-  for i := 0 to high(atpa) do
+  if not findObject(obj, bounds) then exit(false);
+  if length(obj^.optionText) = 0 then
   begin
-    mouseBox(atpa[i].getBounds());
-    if self.randomlyWait() and isMouseOverText(overText)  then
-    begin
-      fastClick(mouse_left);
-      exit(self.randomlyWait() and minimap.waitPlayerMoving());
-    end;
+    wait(100 + random(250));
+    fastClick(mouse_left);
+    exit(self.randomlyWait() and minimap.waitPlayerMoving());
   end;
-  exit(false);
-end;
-
-function TPlayerManager.useObject(
-  color, tolerance: integer;
-  colorSettings: TColorSettings;
-  bounds: TBox;
-  midPoint: TPoint;
-  overText: TStringArray;
-  tries: integer
-): boolean; overload;
-var i: integer;
-begin
-  result := false;
-  for i := 0 to tries - 1 do
-    if self.useObject(color, tolerance, colorSettings, bounds, midPoint, overText) then
-      exit(true);
+  exit(self.randomlyWait() and chooseOption.select(obj^.optionText) and minimap.waitPlayerMoving());
 end;
 
 function TPlayerManager.walkPath(path: TPointArray): boolean;

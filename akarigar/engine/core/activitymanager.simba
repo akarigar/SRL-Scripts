@@ -82,7 +82,7 @@ begin
     writeLn('Starting task "', task^.name, '"');
     if not playerManager.walkPath(task^.pathToObject) then exit(false);
     self.__previousStatus := task^.run();
-    writeLn('Task "', task^.name, '" finished with status ', status);
+    writeLn('Task "', task^.name, '" finished with status ', self.__previousStatus);
 
     if self.__previousStatus <= TTaskStatus.ERR then exit(false);
   end;
