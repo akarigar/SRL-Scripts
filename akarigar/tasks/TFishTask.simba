@@ -1,11 +1,14 @@
 {$include_once ../engine/core/playermanager.simba}
 {$f-}
 
-var __troutDtm: integer;
+const
+  __CRAY_DTM = 'm1gAAAHic42JgYGBmZmBgAWJ+KBYG4u9MDAzfmCDiIPwXyG4Eqi0H4mIgrgTiKiDuAeI2IG4H4i4ov7cdxGMiiCUZiAOMRGIEAABCZAot';
+  __TROUT_DTM = 'm1gAAAHic42JgYGBmZmBgAWJ+KBYG4u9MDAzfmCDiIPwXyG4Eqi0H4mIgrgTiKiDuAeI2IG4H4i4ov7cdxGMiiCUZiAOMRGIEAABCZAot';
+  __SALMON_DTM = 'm1gAAAHic42JgYGBmZmBgAWJ+KBYG4u9MDAzfmCDiIPwXyG4Eqi0H4mIgrgTiKiDuAeI2IG4H4i4ov7cdxGMiiCUZiAOMRGIEAABCZAot';
 
 type TFishTask = record(TTask)
-  troutCaught: integer;
-  salmonCaught: integer;
+  fishNames: TStringArray;
+  fishCaught, fishDtms, fishXp: TIntegerArray;
 end;
 
 function TFishTask.__getRiverBounds(): TBox;
@@ -90,8 +93,8 @@ function TFishTask.__fish(): TTaskStatus;
 var
   fishingPoints: TPointArray;
   fishingSpots: T2DPointArray;
+  i: integer;
   timer: TTimeMarker;
-  troutCaught: integer;
 begin
   timer.start();
   while (timer.getTime() < 30000) and (self.__hasFeathers()) and (not tabBackpack.isFull()) do
@@ -102,19 +105,16 @@ begin
       timer.start();
     end;
   end;
-  troutCaught := tabBackpack.countDTM(__troutDtm);
-  inc(self.troutCaught, troutCaught);
-  inc(self.salmonCaught, tabBackpack.count() - troutCaught - 1);
-  self.itemsGained := self.salmonCaught + self.troutCaught;
+
+  for i := 0 to high(self.fishCaught) do
+    inc(self.fishCaught[i], tabBackpack.countDtm(self.fishDtms[i]));
   if tabBackpack.isFull() then exit(TTaskStatus.DONE)
   else exit(TTaskStatus.ERR);
 end;
 
 procedure TFishTask.__reportFishingProgress(
   fish: string;
-  count: integer;
-  xp: extended;
-  timeRan: integer
+  count, xp, timeRan: integer
 );
 begin
   writeLn(formatProgressLine(
@@ -124,18 +124,25 @@ begin
   ));
   writeLn(formatProgressLine(
     'XP gained from catching ' + fish + ': %d (%d/hr)',
-    round(count * xp),
+    count * xp,
     timeRan
   ));
 end;
 
 function TFishTask.__reportProgress(timeRan: integer): extended;
+var i, totalXp: integer = 0;
 begin
-  playerManager.saveResource('Raw trout', self.troutCaught);
-  playerManager.saveResource('Raw salmon', self.salmonCaught);
+  self.itemsGained := 0;
+  for i := 0 to high(self.fishNames) do
+  begin
+    playerManager.saveResource(self.fishNames[i], self.fishCaught[i]);
+    self.__reportFishingProgress(
+      self.fishNames[i], self.fishCaught[i], self.fishXp[i], timeRan
+    );
+    self.itemsGained += self.fishCaught[i];
+    totalXp += self.fishCaught[i] * self.fishXp[i];
+  end;
 
-  self.__reportFishingProgress('Trout', self.troutCaught, 50, timeRan);
-  self.__reportFishingProgress('Salmon', self.salmonCaught, 70, timeRan);
   writeLn(formatProgressLine(
     'Total fish caught: %d (%d/hr)',
     self.itemsGained,
@@ -143,29 +150,37 @@ begin
   ));
   writeLn(formatProgressLine(
     'Total XP gained from catching fish: %d (%d/hr)',
-    round(self.salmonCaught * 70 + self.troutCaught * 50),
+    totalXp,
     timeRan
   ));
-  exit(self.salmonCaught * 70 + self.troutCaught * 50);
+  exit(totalXp);
+end;
+
+procedure TFishTask.__free();
+var i: integer;
+begin
+  for i := 0 to high(self.fishDtms) do
+    freeDtm(self.fishDtms[i]);
 end;
 
 function FishTask(args: TStringArray): ^TFishTask;
 var task: ^TFishTask;
 begin
   new(task);
-  task^.init('Fish', args, 90, task^.__fish, task^.__reportProgress);
-  task^.troutCaught := task^.salmonCaught := 0;
+  task^.init('Fish', args, 0, task^.__fish, task^.__reportProgress, task^.__free);
+  if task^.flag = 0 then
+  begin
+    task^.fishNames := ['Raw crayfish'];
+    task^.fishDtms := [DTMFromString(__CRAY_DTM)];
+    task^.fishCaught := [0];
+    task^.fishXp := [10];
+  end else
+  begin
+    task^.fishNames := ['Raw trout', 'Raw salmon'];
+    task^.fishDtms := [DTMFromString(__TROUT_DTM), DTMFromString(__SALMON_DTM)];
+    task^.fishXp := [50, 70];
+  end;
   exit(task);
-end;
-
-procedure __freeFishDtm();
-begin
-  freeDtm(__troutDtm);
-end;
-
-begin
-  __troutDtm := DTMFromString('m1gAAAHic42JgYGBmZmBgAWJ+KBYG4u9MDAzfmCDiIPwXyG4Eqi0H4mIgrgTiKiDuAeI2IG4H4i4ov7cdxGMiiCUZiAOMRGIEAABCZAot');
-  AddOnTerminate('__freeFishDtm');
 end;
 
 {$f+}

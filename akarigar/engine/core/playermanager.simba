@@ -40,7 +40,7 @@ begin
   if obj^.relative <> nil then
   begin
     if not self.findObject(obj^.relative, relativeBounds) then exit(false);
-    if obj^.relation = 0 then
+    if obj^.relation = 1 then
       bounds := relativeBounds;
   end;
 
@@ -58,11 +58,11 @@ begin
   // Filter out the player & make a sorted TPointArray
   mainscreen.filterPointsPlayer(tpa);
   atpa := tpa.toATPA(25, 25);
-  if obj^.sort = 0 then
-    if obj^.relation = 1 then
+  if obj^.sort = 1 then
+    if obj^.relation = 2 then
       atpa.sortFromMidPoint(relativeBounds.getMiddle())
     else atpa.sortFromMidPoint(mainscreen.playerPoint)
-  else if obj^.sort = 1 then
+  else if obj^.sort = 2 then
     atpa.sortBySize();
 
   // If we don't have any over text, but we found potential objects, then the

@@ -8,6 +8,7 @@ program LumbridgeFishNCook;
 
 procedure doAntiBan();
 begin
+  bankScreen.quickDeposit
   case random(600) of
     1..10: sleepAndMoveMouse(randomRange(150, 1000));
     11..20:
@@ -39,7 +40,7 @@ begin
   clearDebug();
   initPlayerForm();
   engine
-    .loadArea('NOOB_O_MATIC_CHEF')
+    .loadArea('LOCATION_18')
     .setAntiBan(doAntiBan)
     .run();
 end.

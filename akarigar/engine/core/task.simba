@@ -23,12 +23,14 @@ type TTask = record
   objectSettings: PObjectSettings;
   run: function(): TTaskStatus of object;
   reportProgress: function(timeRan: integer): extended of object;
+  freeExtras: procedure() of object;
 end;
 
 type PTask = ^TTask;
 
 procedure TTask.free();
 begin
+  if self.freeExtras <> nil then self.freeExtras();
   if self.objectSettings = nil then exit;
   self.objectSettings^.free();
   dispose(self.objectSettings);
@@ -39,8 +41,9 @@ procedure TTask.init(
   args: TStringArray;
   xpPerItem: integer;
   run: function(): TTaskStatus of object;
-  reportProgress: function(timeRan: integer): extended of object = nil
-); overload;
+  reportProgress: function(timeRan: integer): extended of object = nil;
+  freeExtras: procedure() of object = nil
+);
 begin
   if not inRange(length(args), 4, 5) then
   begin
@@ -61,6 +64,7 @@ begin
   self.run := run;
   if reportProgress = nil then self.reportProgress := self.__reportTaskProgress
   else self.reportProgress := reportProgress;
+  self.freeExtras := freeExtras;
 end;
 
 function TTask.__reportTaskProgress(timeRan: integer): extended;
