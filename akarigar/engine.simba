@@ -1,3 +1,9 @@
+{$IFDEF DEBUG}
+  {$IFDEF SMART}
+    {$DEFINE SMART_DEBUG}
+  {$ENDIF}
+{$ENDIF}
+
 {$include_once srl-6/srl.simba}
 {$include_once srl-6/lib/misc/srlplayerform.simba}
 
@@ -6,33 +12,23 @@
 {$include_once engine/util/bank.simba}
 {$f-}
 
-{ This is just a very initial design, it is missing some key things
-  (like dependency, biometrics, etc). Much of the stuff here is still not
-  finalized. I'm going to be adding things as needed. I'll be moving things out
-  of this and making their own files as they become big.
-}
+type TEngine = record
+  declarePlayers: procedure();
 
-type
-  PEngine = ^TEngine;
+  __activityManager: TActivityManager;
+end;
 
-  TEngine = record
-    antiBan: procedure();
-    declarePlayers: procedure(engine: PEngine);
-
-    __activityManager: TActivityManager;
-  end;
-
-var engine: TEngine = [nil, nil, [nil, 0]];
+var engine: TEngine = [nil, [nil, 0]];
 
 // Setters =====================================================================
 
 function TEngine.setAntiBan(antiBan: procedure()): TEngine;
 begin
-  self.antiBan := antiBan;
+  SRL_Events[EVENT_ANTIBAN] := antiBan;
   exit(self);
 end;
 
-function TEngine.setDeclarePlayers(declarePlayers: procedure(engine: PEngine)): TEngine;
+function TEngine.setDeclarePlayers(declarePlayers: procedure()): TEngine;
 begin
   self.declarePlayers := declarePlayers;
   exit(self);
@@ -53,7 +49,7 @@ begin
   players.setup(playerForm.players);
 
   if self.declarePlayers <> nil then
-    self.declarePlayers(@self);
+    self.declarePlayers();
 
   for i := 0 to high(players) do
     with playerForm.players[i] do
@@ -75,10 +71,13 @@ begin
   self.__activityManager.destroy();
 end;
 
-procedure TEngine.__initForm();
+procedure TEngine.__initPlayerForm();
 begin
   with playerForm do
   begin
+    if length(name) = 0 then
+      name := 'All In One Runescape';
+
     editBoxLabels.combine(['World', 'Take a break around (mins)', 'Duration of break (mins)']);
     editBoxDefaults.combine(['-1', '60', '5']);
     editBoxHints.combine([
@@ -97,7 +96,6 @@ procedure TEngine.__runLoop();
 var timer: TTimeMarker;
 begin
   print('TEngine.__runLoop()');
-  SRL_Events[EVENT_ANTIBAN] := self.antiBan;
   while players.getActive() > 0 do
   begin
     timer.start();
@@ -142,16 +140,16 @@ end;
 
 function TEngine.run(): boolean;
 begin
-  self.__initForm();
+  self.__initPlayerForm();
   runPlayerForm();
   if not playerForm.isScriptReady then exit(false);
 
   self.__declarePlayers();
+  {$IFDEF SMART_DEBUG}
+  smartEnableDrawing := true;
+  {$ENDIF}
   if not setupSRL() then exit(false);
 
-{$IFDEF SMART}
-  smartEnableDrawing := true;
-{$ENDIF}
   addOnTerminate('destroyEngine');
   self.__runLoop();
   exit(true);

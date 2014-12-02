@@ -30,8 +30,8 @@ var
   timer: TTimeMarker;
 begin
   bounds := mainscreen.playerBox;
-  bounds.X1 -= mainscreen.playerBox.getWidth();
-  bounds.X2 -= mainscreen.playerBox.getWidth();
+  bounds.X1 += mainscreen.playerBox.getWidth();
+  bounds.X2 += mainscreen.playerBox.getWidth();
   timer.start();
   while timer.getTime() <= 1500 do
     if findColorsSpiralTolerance(
@@ -46,10 +46,10 @@ begin
   exit(false);
 end;
 
-function TFishTask.__hasFeathers(): boolean;
+function TFishTask.__hasGear(): boolean;
 var x, y: integer;
 begin
-  exit(findColor(x, y, 65535, tabBackpack.getBounds()));
+  exit((self.flag = 0) or (findColor(x, y, 65535, tabBackpack.getBounds())));
 end;
 
 { Walks through all the known spots twice to find & use an active spot. }
@@ -97,7 +97,7 @@ var
   timer: TTimeMarker;
 begin
   timer.start();
-  while (timer.getTime() < 30000) and (self.__hasFeathers()) and (not tabBackpack.isFull()) do
+  while (timer.getTime() < 30000) and (self.__hasGear()) and (not tabBackpack.isFull()) do
   begin
     if playerManager.randomlyWait() and self.__goFish() then
     begin

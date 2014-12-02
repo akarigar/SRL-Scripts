@@ -65,6 +65,13 @@ begin
   else if obj^.sort = 2 then
     atpa.sortBySize();
 
+  {$IFDEF SMART_DEBUG}
+  smartImage.debugATPA(atpa);
+  smartImage.drawBox(bounds);
+  wait(1000);
+  smartImage.clear();
+  {$ENDIF}
+
   // If we don't have any over text, but we found potential objects, then the
   // entire atpa is our object.
   if length(obj^.overText) = 0 then
