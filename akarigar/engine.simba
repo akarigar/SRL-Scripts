@@ -19,7 +19,7 @@ type TEngine = record
   __activityManager: TActivityManager;
 end;
 
-var engine = [nil, [nil, 0]];
+var engine: TEngine;
 
 // Setters =====================================================================
 

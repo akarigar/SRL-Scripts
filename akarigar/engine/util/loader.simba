@@ -4,22 +4,22 @@
 {$include_once ../../tasks/TFishTask.simba}
 {$f-}
 
-function Task(name: string; args: TStringArray): PTask;
+function Task(name, data: string): PTask;
 begin
   case name of
-    'Bank': exit(BankTask(args));
-    'Cook': exit(CookTask(args));
-    'Fish': exit(FishTask(args));
+    'Bank': exit(BankTask(data));
+    'Cook': exit(CookTask(data));
+    'Fish': exit(FishTask(data));
     else exit(nil);
   end;
 end;
 
-procedure TActivity.__processRequirement(data: string);
+procedure TActivity.__processRequirement(xml: string);
 var
   i: integer;
   resources: TStringArray;
 begin
-  resources := multiBetween(data, '<item ', '/item>');
+  resources := multiBetween(xml, '<item ', '</item>');
 
   for i := 0 to high(resources) do
   begin
@@ -28,31 +28,29 @@ begin
   end;
 end;
 
-procedure TActivity.fromString(data: string);
+procedure TActivity.fromString(xml: string);
 var
   i: integer;
   taskData: TStringArray;
 begin
-  self.name := between('<activity name="', '">', data);
-  data := between('<activity name="', '</activity>', data);
-  if pos('<quota>', data) > 0 then
-    self.quota := strToInt(between('<quota>', '</quota>', data));
+  // Process name & quota
+  self.name := between('name="', '"', xml);
+  self.recipe.fromXml(between('<recipe>', '</recipe>', xml));
 
-  taskData := multiBetween(data, '<task ', '</task>');
+  if pos('<quota>', xml) > 0 then
+    self.quota := strToInt(between('<quota>', '</quota>', xml));
+
+  // Process task data
+  taskData := multiBetween(xml, '<task ', '</task>');
   for i := 0 to high(taskData) do
-    self.appendTask(Task(
-      between('name="', '">', taskData[i]),
-      multiBetween(taskData[i], '<arg>', '</arg>')
-    ));
-
-  self.__processRequirement(between('<requirement>', '</requirement>', data));
+    self.appendTask(Task(between('name="', '"', taskData[i]), taskData[i]));
 end;
 
-function Activity(data: string): PActivity;
+function Activity(xml: string): PActivity;
 var activity: PActivity;
 begin
   new(activity);
-  activity^.fromString(data);
+  activity^.fromString(xml);
   exit(activity);
 end;
 

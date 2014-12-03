@@ -1,3 +1,4 @@
+{$include_once item.simba}
 {$include_once objectsettings.simba}
 {$include_once ../util/util.simba}
 {$f-}
@@ -18,68 +19,67 @@ type TTaskStatus = (
 type TTask = record
   name: string;
   location, tries, flag, itemsGained: integer;
-  xpPerItem: extended;
+  recipe: TRecipe;
   pathToObject, objectLocations: TPointArray;
   objectSettings: PObjectSettings;
   run: function(): TTaskStatus of object;
   reportProgress: function(timeRan: integer): extended of object;
-  freeExtras: procedure() of object;
 end;
 
 type PTask = ^TTask;
 
 procedure TTask.free();
+var i: integer;
 begin
-  if self.freeExtras <> nil then self.freeExtras();
+  for i := 0 to high(self.recipe.itemsOut) do
+    if dtmExists(self.recipe.itemsOut[i].dtm) then
+      freeDtm(self.recipe.itemsOut[i].dtm);
+
   if self.objectSettings = nil then exit;
   self.objectSettings^.free();
   dispose(self.objectSettings);
 end;
 
-procedure TTask.init(
-  name: string;
-  args: TStringArray;
-  xpPerItem: integer;
-  run: function(): TTaskStatus of object;
-  reportProgress: function(timeRan: integer): extended of object = nil;
-  freeExtras: procedure() of object = nil
-);
+procedure TTask.init(name, data: string; run: function(): TTaskStatus of object);
+var i: integer;
 begin
-  if not inRange(length(args), 4, 5) then
-  begin
-    writeLn('ERROR incorrect number of args: ', args);
-    exit;
-  end;
   self.name := name;
-  self.location := strToInt(args[0]);
+  self.location := strToInt(between('<loc>', '</loc>', data));
   self.tries := FAIL_MAX;
-  self.flag := strToInt(args[1]);
-  self.itemsGained := 0;
-  self.xpPerItem := xpPerItem;
-  self.pathToObject := strToTPA(args[2]);
-  self.objectLocations := strToTPA(args[3]);
-  if length(args) = 5 then
-    self.objectSettings := xmlToObjectSettings(args[4])
-  else self.objectSettings := nil;
+  self.flag := strToInt(between('<flag>', '</flag>', data));
+  self.pathToObject := strToTPA(between('<pto>', '</pto>', data));
+  self.objectLocations := strToTPA(between('<ol>', '</ol>', data));
+  self.objectSettings := xmlToObjectSettings(between('<s>', '</s>', data));
+  self.recipe.fromXml(between('<recipe>', '</recipe>', data));
   self.run := run;
-  if reportProgress = nil then self.reportProgress := self.__reportTaskProgress
-  else self.reportProgress := reportProgress;
-  self.freeExtras := freeExtras;
+  self.reportProgress := self.__reportTaskProgress;
+
+  // Make the DTMs
+  for i := 0 to high(self.recipe.itemsOut) do
+    self.recipe.itemsOut[i].dtm := dtmFromString(self.recipe.itemsOut[i].dtmString);
 end;
 
 function TTask.__reportTaskProgress(timeRan: integer): extended;
+var
+  i: integer;
+  totalXp, xp: extended = 0;
 begin
-  writeLn(formatProgressLine(
-    'Items gained from ' + self.name + ': %d (%d/hr)',
-    self.itemsGained,
-    timeRan
-  ));
-  writeLn(formatProgressLine(
-    'XP gained from ' + self.name + ': %d (%d/hr)',
-    round(self.itemsGained * self.xpPerItem),
-    timeRan
-  ));
-  exit(self.itemsGained * self.xpPerItem);
+  for i := 0 to high(self.recipe.itemsOut) do
+  begin
+    xp := self.recipe.itemsOut[i].count * self.recipe.itemsOut[i].xp;
+    totalXp += xp;
+    writeLn(formatProgressLine(
+      self.recipe.itemsOut[i].name,
+      self.recipe.itemsOut[i].count,
+      timeRan
+    ));
+    writeLn(formatProgressLine(
+      self.recipe.itemsOut[i].name + ' XP',
+      round(xp),
+      timeRan
+    ));
+  end;
+  exit(totalXp);
 end;
 
 type TTaskList = array of PTask;

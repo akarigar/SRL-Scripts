@@ -1,7 +1,41 @@
 {$f-}
 
 type TItem = record
-  id: integer;
-  name: string;
-  amount: integer;
+  name, dtmString: string;
+  amount, count, dtm: integer;
+  xp: extended;
+end;
+
+type TItemArray = array of TItem;
+
+procedure TItemArray.add(xml: string);
+var item: TItem;
+begin
+  item.name := between('name="', '"', xml);
+  item.amount := strToInt(between('amount="', '"', xml));
+  item.xp := strToFloat(between('xp="', '"', xml));
+  item.dtmString := between('>', '</i', xml);
+
+  setLength(self, length(self) + 1);
+  self[high(self)] := item;
+end;
+
+procedure TItemArray.addAll(xml: TStringArray);
+var i: integer;
+begin
+  writeln(xml);
+  for i := 0 to high(xml) do
+    self.add(xml[i]);
+end;
+
+type TRecipe = record
+  itemsIn, itemsOut: TItemArray;
+end;
+
+procedure TRecipe.fromXml(xml: string);
+begin
+  if pos('<in>', xml) > 0 then
+    self.itemsIn.addAll(multiBetween(between('<in>', '</in>', xml), '<item', 'tem>'));
+  if  pos('<out>', xml) > 0 then
+    self.itemsOut.addAll(multiBetween(between('<out>', '</out>', xml), '<item', 'tem>'));
 end;

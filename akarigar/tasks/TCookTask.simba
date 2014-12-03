@@ -25,27 +25,11 @@ begin
   exit(TTaskStatus.DONE);
 end;
 
-function TCookTask.__reportProgress(timeRan: integer): extended;
-begin
-  writeLn(formatProgressLine(
-    'Food cooked successfully: %d/' +
-      intToStr(self.itemsBurned + self.itemsGained) + ' (%d/hr)',
-    self.itemsGained,
-    timeRan
-  ));
-  writeLn(formatProgressLine(
-    'XP gained from cooking: %d (%d/hr)',
-    round(self.itemsGained * self.xpPerItem),
-    timeRan
-  ));
-  exit(self.itemsGained * self.xpPerItem);
-end;
-
-function CookTask(args: TStringArray): ^TCookTask;
+function CookTask(data: string): ^TCookTask;
 var task: ^TCookTask;
 begin
   new(task);
-  task^.init('Cook', args, 70, task^.__cook, task^.__reportProgress);
+  task^.init('Cook', data, task^.__cook);
   task^.itemsBurned := 0;
   exit(task);
 end;

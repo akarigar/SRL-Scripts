@@ -24,6 +24,7 @@ var
   data, args: TStringArray;
   i: integer;
 begin
+  if length(xml) = 0 then exit(nil);
   data := multiBetween(xml, '<obj>', '<');
   relative := nil;
 

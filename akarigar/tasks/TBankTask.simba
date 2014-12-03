@@ -34,11 +34,11 @@ begin
   exit(TTaskStatus.DONE);
 end;
 
-function BankTask(args: TStringArray): ^TBankTask;
+function BankTask(data: string): ^TBankTask;
 var task: ^TBankTask;
 begin
   new(task);
-  task^.init('Bank', args, 0, task^.__bank);
+  task^.init('Bank', data, task^.__bank);
 
   case task^.location of
     LOCATION_AL_KHARID: task^.bankType := BANK_NPC_GREEN;

@@ -1,8 +1,10 @@
+{$include_once item.simba}
 {$include_once task.simba}
 {$f-}
 
 type TActivity = record
   name: string;
+  recipe: TRecipe;
   requirement: record
     items: TStringArray;
     amounts: TIntegerArray;
