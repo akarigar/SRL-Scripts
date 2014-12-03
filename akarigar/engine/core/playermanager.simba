@@ -107,32 +107,10 @@ begin
   self.area := currentArea;
 end;
 
-function TPlayerManager.loadResource(name: string): TItem;
-var item: TItem;
-begin
-  item.name := name;
-  item.amount := strToInt(readIni(
-    players[currentPlayer].nickname,
-    name,
-    scriptPath + 'akarigar\resources.ini'
-  ));
-  exit(item);
-end;
-
 function TPlayerManager.randomlyWait(min: integer = 250; max: integer = 750): boolean;
 begin
   wait(gaussRangeInt(min, max));
   exit(true);
-end;
-
-procedure TPlayerManager.saveResource(name: string; amount: integer);
-begin
-  writeIni(
-    players[currentPlayer].nickname,
-    name,
-    intToStr(amount),
-    scriptPath + 'akarigar\resources.ini'
-  );
 end;
 
 procedure TPlayerManager.takeBreak();

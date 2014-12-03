@@ -1,4 +1,5 @@
 {$include_once ../engine/core/playermanager.simba}
+{$include_once ../engine/core/resourcemanager.simba}
 {$f-}
 
 const
@@ -135,7 +136,7 @@ begin
   self.itemsGained := 0;
   for i := 0 to high(self.fishNames) do
   begin
-    playerManager.saveResource(self.fishNames[i], self.fishCaught[i]);
+    resourceManager.updateResource(self.fishNames[i], self.fishCaught[i]);
     self.__reportFishingProgress(
       self.fishNames[i], self.fishCaught[i], self.fishXp[i], timeRan
     );
@@ -159,6 +160,7 @@ end;
 procedure TFishTask.__free();
 var i: integer;
 begin
+  writeln('freeing fish dtms: ', self.fishDtms);
   for i := 0 to high(self.fishDtms) do
     freeDtm(self.fishDtms[i]);
 end;

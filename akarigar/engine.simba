@@ -9,6 +9,7 @@
 
 {$include_once engine/core/activitymanager.simba}
 {$include_once engine/core/playermanager.simba}
+{$include_once engine/core/resourcemanager.simba}
 {$include_once engine/util/bank.simba}
 {$f-}
 
@@ -18,28 +19,25 @@ type TEngine = record
   __activityManager: TActivityManager;
 end;
 
-var engine: TEngine = [nil, [nil, 0]];
+var engine = [nil, [nil, 0]];
 
 // Setters =====================================================================
 
-function TEngine.setAntiBan(antiBan: procedure()): TEngine;
+procedure TEngine.setAntiBan(antiBan: procedure());
 begin
   SRL_Events[EVENT_ANTIBAN] := antiBan;
-  exit(self);
 end;
 
-function TEngine.setDeclarePlayers(declarePlayers: procedure()): TEngine;
+procedure TEngine.setDeclarePlayers(declarePlayers: procedure());
 begin
   self.declarePlayers := declarePlayers;
-  exit(self);
 end;
 
 // End Setters =================================================================
 
-function TEngine.loadArea(mapName: string): TEngine;
+procedure TEngine.loadArea(mapName: string);
 begin
   playerManager.loadArea(mapName);
-  exit(self);
 end;
 
 procedure TEngine.__declarePlayers();
@@ -67,8 +65,8 @@ end;
 
 procedure TEngine.__destroy();
 begin
-  writeLn('Freeing engine resources');
   self.__activityManager.destroy();
+  resourceManager.clear();
 end;
 
 procedure TEngine.__initPlayerForm();
@@ -130,7 +128,10 @@ begin
       if timer.getTime() > players[currentPlayer].integers[P_NEXT_BREAK] then
         playerManager.takeBreak()
     else if players.getActive() > 0 then
+    begin
       players.randomNext(false);
+      resourceManager.setup(players[currentPlayer].nickname);
+    end;
 
     if isLoggedIn() then
       players[currentPlayer].logout();
@@ -150,6 +151,7 @@ begin
   {$ENDIF}
   if not setupSRL() then exit(false);
 
+  resourceManager.setup(players[currentPlayer].nickname);
   addOnTerminate('destroyEngine');
   self.__runLoop();
   exit(true);
@@ -159,3 +161,4 @@ procedure destroyEngine();
 begin
   engine.__destroy();
 end;
+

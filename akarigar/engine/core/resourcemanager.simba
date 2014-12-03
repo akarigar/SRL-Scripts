@@ -1,0 +1,77 @@
+{$include ../util/map.simba}
+{$f-}
+
+type TResourceManager = record
+  __filePath, __nickname: string;
+  __resources: TMap;
+end;
+
+var resourceManager: TResourceManager;
+
+procedure TResourceManager.clear();
+begin
+  if self.__resources.isEmpty() then exit;
+
+  self.__saveResources();
+  self.__resources.clear();
+end;
+
+procedure TResourceManager.removeResource(name: string);
+begin
+  self.__resources.remove(name);
+  deleteIni(self.__nickname, name, self.__filePath);
+end;
+
+procedure TResourceManager.updateResource(name: string; amount: integer);
+begin
+  if amount <= 0 then
+    self.removeResource(name)
+  else self.__resources.put(name, intToStr(amount));
+end;
+
+procedure TResourceManager.setup(nickname: string);
+begin
+  self.clear();
+  self.__filePath := scriptPath + 'akarigar\resources.ini';
+  self.__nickname := nickname;
+  self.__resources.init(20);
+end;
+
+procedure TResourceManager.__loadResources();
+var
+  i: integer;
+  keyData: string;
+  keys: TStringArray;
+begin
+  keyData := self.__read('_keys');
+  if length(keyData) = 0 then exit;
+  keys := explode(',', keyData);
+  for i := 0 to high(keys) do
+    self.__resources.put(keys[i], self.__read(keys[i]));
+end;
+
+function TResourceManager.__read(key: string): string;
+begin
+  exit(readIni(self.__nickname, key, self.__filePath));
+end;
+
+procedure TResourceManager.__saveResources();
+var
+  i: integer;
+  keyData: string;
+  keys: TVariantSet;
+begin
+  keys := self.__resources.keys();
+  for i := 0 to high(keys) do
+  begin
+    self.__write(keys[i], self.__resources.get(keys[i])^);
+    keyData += string(keys[i]);
+    if i < high(keys) then keyData += ',';
+  end;
+  self.__write('_keys', keyData);
+end;
+
+procedure TResourceManager.__write(key, value: string);
+begin
+  writeIni(self.__nickname, key, value, self.__filePath);
+end;

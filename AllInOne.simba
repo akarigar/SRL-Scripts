@@ -32,8 +32,7 @@ end;
 
 begin
   clearDebug();
-  engine
-    .loadArea('LOCATION_18')
-    .setAntiBan(doAntiBan)
-    .run();
+  engine.loadArea('LOCATION_18');
+  engine.setAntiBan(doAntiBan);
+  engine.run();
 end.
