@@ -1,0 +1,178 @@
+{$f-}
+
+type TPair = record
+  key, value: Variant;
+end;
+
+
+type TPairList = array of TPair;
+
+procedure TPairList.add(key, value: Variant);
+begin
+  setLength(self, length(self) + 1);
+  self[high(self)].key := key;
+  self[high(self)].value := value;
+end;
+
+function TPairList.contains(key: Variant): boolean;
+begin
+  exit(self.find(key) <> nil);
+end;
+
+function TPairList.find(key: Variant): ^TPair;
+var i: integer;
+begin
+  for i := 0 to high(self) do
+    if self[i].key = key then
+      exit(@self[i]);
+  exit(nil);
+end;
+
+procedure TPairList.remove(value: Variant);
+var i: integer;
+begin
+  for i := 0 to high(self) do
+    if self[i].value = value then
+    begin
+      self.remove(i);
+      exit;
+    end;
+end;
+
+procedure TPairList.__remove(index: integer);
+begin
+  for index to high(self) - 1 do
+    self[index] := self[index + 1];
+  setLength(self, high(self));
+end;
+
+
+type T2DPairList = array of TPairList;
+
+function T2DPairList.get(index: integer): ^TPairList;
+begin
+  exit(@self[index]);
+end;
+
+procedure T2DPairList.resize(size: integer);
+begin
+  setLength(self, size);
+end;
+
+function T2DPairList.size(): integer;
+begin
+  exit(length(self));
+end;
+
+
+type TVariantSet = array of Variant;
+
+procedure TVariantSet.add(e: Variant);
+begin
+  if self.contains(e) then exit;
+  setLength(self, length(self) + 1);
+  self[high(self)] := e;
+end;
+
+function TVariantSet.contains(e: Variant): boolean;
+var i: integer;
+begin
+  for i := 0 to high(self) do
+    if self[i] = e then
+      exit(true);
+  exit(false);
+end;
+
+procedure TVariantSet.remove(e: Variant);
+var i: integer;
+begin
+  for i := 0 to high(self) do
+    if self[i] = e then break;
+  if i > high(self) then exit;
+
+  if i < high(self) then
+    for i to high(self) - 1 do
+      self[i] := self[i + 1];
+  setLength(self, high(self));
+end;
+
+
+type TMap = record
+  __keys: TVariantSet;
+  __table: T2DPairList;
+end;
+
+procedure TMap.clear();
+var i: integer;
+begin
+  for i := 0 to high(self.__keys) do
+    self.remove(self.__keys[i]);
+end;
+
+function TMap.contains(key: Variant): boolean;
+begin
+  exit(self.__getPairList(key)^.contains(key));
+end;
+
+function TMap.get(key: Variant): ^Variant;
+var pair: ^TPair;
+begin
+  pair := self.__getPairList(key)^.find(key);
+  if pair = nil then exit(nil);
+  exit(@pair^.value);
+end;
+
+procedure TMap.init(initialCapacity: integer);
+begin
+  self.__table.resize(initialCapacity);
+end;
+
+function TMap.isEmpty(): boolean;
+begin
+  exit(length(self.__keys) = 0);
+end;
+
+function TMap.keys(): TVariantSet;
+begin
+  exit(self.__keys);
+end;
+
+procedure TMap.put(key, value: Variant);
+var pair: ^TPair;
+begin
+  pair := self.__getPairList(key)^.find(key);
+  if pair <> nil then
+  begin
+    pair^.value := value;
+    exit;
+  end;
+  self.__getPairList(key)^.add(key, value);
+  self.__keys.add(key);
+end;
+
+procedure TMap.remove(key: Variant);
+begin
+  self.__getPairList(key)^.remove(key);
+  self.__keys.remove(key);
+end;
+
+function TMap.__getPairList(key: Variant): ^TPairList;
+begin
+  exit(self.__table.get(self.__hash(key) mod self.__table.size()));
+end;
+
+function TMap.__hash(key: Variant): LongWord;
+var
+  hash: LongWord;
+  i: integer;
+  keyStr: string;
+begin
+  keyStr := toStr(key);
+  hash := 5381;
+
+  for i := 1 to length(keyStr) do
+    hash = ((hash shl 5) + hash) + ord(keyStr[i]);
+
+  exit(hash);
+end;
+
