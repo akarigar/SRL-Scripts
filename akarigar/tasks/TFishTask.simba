@@ -99,8 +99,6 @@ begin
     end;
   end;
 
-  //for i := 0 to high(self.fishCaught) do
-  //  inc(self.fishCaught[i], tabBackpack.countDtm(self.fishDtms[i]));
   if tabBackpack.isFull() then exit(TTaskStatus.DONE)
   else exit(TTaskStatus.ERR);
 end;

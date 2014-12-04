@@ -58,12 +58,10 @@ begin
     writeLn('Activity looped ', integers[P_LOOP_COUNT], ' times');
     for i := 0 to high(self.getCurrentActivity()^.tasks) do
     begin
-      task := self.getCurrentActivity()^.tasks[i];
-      if (task^.xpPerItem <= 0) or (task^.reportProgress = nil) then continue;
-      totalXp += task^.reportProgress(timeRan);
+      totalXp += self.getCurrentActivity()^.tasks[i]^.reportProgress(timeRan);
     end;
 
-    writeLn(formatProgressLine('Total XP: %d (%d/hr)', round(totalXp), timeRan));
+    writeLn(formatProgressLine('Total XP', round(totalXp), timeRan));
     writeLn('================================================================');
   end;
 end;

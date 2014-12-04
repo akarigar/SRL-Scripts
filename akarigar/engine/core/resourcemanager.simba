@@ -22,19 +22,34 @@ begin
   deleteIni(self.__nickname, name, self.__filePath);
 end;
 
-procedure TResourceManager.updateResource(name: string; amount: integer);
-begin
-  if amount <= 0 then
-    self.removeResource(name)
-  else self.__resources.put(name, intToStr(amount));
-end;
-
 procedure TResourceManager.setup(nickname: string);
 begin
   self.clear();
-  self.__filePath := scriptPath + 'akarigar\resources.ini';
+  self.__filePath := includePath + 'akarigar\resources.ini';
   self.__nickname := nickname;
   self.__resources.init(20);
+  self.__loadResources();
+end;
+
+procedure TResourceManager.updateResource(name: string; delta: integer);
+var amount: ^Variant;
+begin
+  amount := self.__resources.get(name);
+
+  // Add the resource if we don't have it stored
+  if amount = nil then
+  begin
+    if delta > 0 then
+      self.__resources.put(name, delta);
+    exit;
+  end;
+
+  // Update the resouce, remove the resource if we run out of it
+  amount^ += delta;
+  if amount^ <= 0 then
+  begin
+    self.removeResource(name);
+  end;
 end;
 
 procedure TResourceManager.__loadResources();
@@ -47,7 +62,7 @@ begin
   if length(keyData) = 0 then exit;
   keys := explode(',', keyData);
   for i := 0 to high(keys) do
-    self.__resources.put(keys[i], self.__read(keys[i]));
+    self.__resources.put(keys[i], strToInt(self.__read(keys[i])));
 end;
 
 function TResourceManager.__read(key: string): string;

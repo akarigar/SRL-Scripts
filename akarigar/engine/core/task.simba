@@ -1,5 +1,6 @@
 {$include_once item.simba}
 {$include_once objectsettings.simba}
+{$include_once resourcemanager.simba}
 {$include_once ../util/util.simba}
 {$f-}
 
@@ -22,7 +23,7 @@ type TTask = record
   recipe: TRecipe;
   pathToObject, objectLocations: TPointArray;
   objectSettings: PObjectSettings;
-  run: function(): TTaskStatus of object;
+  __run: function(): TTaskStatus of object;
   reportProgress: function(timeRan: integer): extended of object;
 end;
 
@@ -40,7 +41,7 @@ begin
   dispose(self.objectSettings);
 end;
 
-procedure TTask.init(name, data: string; run: function(): TTaskStatus of object);
+procedure TTask.init(name, data: string; f: function(): TTaskStatus of object);
 var i: integer;
 begin
   self.name := name;
@@ -51,12 +52,28 @@ begin
   self.objectLocations := strToTPA(between('<ol>', '</ol>', data));
   self.objectSettings := xmlToObjectSettings(between('<s>', '</s>', data));
   self.recipe.fromXml(between('<recipe>', '</recipe>', data));
-  self.run := run;
+  self.__run := f;
   self.reportProgress := self.__reportTaskProgress;
 
   // Make the DTMs
   for i := 0 to high(self.recipe.itemsOut) do
     self.recipe.itemsOut[i].dtm := dtmFromString(self.recipe.itemsOut[i].dtmString);
+end;
+
+function TTask.run(): TTaskStatus;
+var count, i, j: integer;
+begin
+  result := self.__run();
+
+  // Update resources based on what has been produced
+  for i := 0 to high(self.recipe.itemsOut) do
+  begin
+    count := tabBackpack.countDtm(self.recipe.itemsOut[i].dtm);
+    inc(self.recipe.itemsOut[i].count, count);
+    resourceManager.updateResource(self.recipe.itemsOut[i].name, count);
+    for j := 0 to high(self.recipe.itemsIn) do
+      resourceManager.updateResource(self.recipe.itemsIn[i].name, -count);
+  end;
 end;
 
 function TTask.__reportTaskProgress(timeRan: integer): extended;

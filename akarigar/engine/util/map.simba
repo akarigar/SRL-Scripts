@@ -28,13 +28,13 @@ begin
   exit(nil);
 end;
 
-procedure TPairList.remove(value: Variant);
+procedure TPairList.remove(key: Variant);
 var i: integer;
 begin
   for i := 0 to high(self) do
-    if self[i].value = value then
+    if self[i].key = key then
     begin
-      self.remove(i);
+      self.__remove(i);
       exit;
     end;
 end;
