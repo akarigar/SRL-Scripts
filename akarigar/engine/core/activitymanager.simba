@@ -2,7 +2,7 @@
 {$include_once ../util/loader.simba}
 {$f-}
 
-const __PAGE__ = 'http://akarigar.com/srl/next.php';
+const __URL__ = 'http://akarigar.com/srl/next/?items=%s&skills=%s';
 
 type TActivityManager = record
   __currentActivity: PActivity;
@@ -29,7 +29,11 @@ end;
 function TActivityManager.next(): PActivity;
 begin
   self.destroy();
-  self.__currentActivity := Activity(getPage(__PAGE__));
+  self.__currentActivity := Activity(
+    getPage(
+      format(__URL__, [resourceManager.toString(), playerManager.getSkills()])
+    )
+  );
   self.__makePreset := true;
   exit(self.__currentActivity);
 end;

@@ -89,6 +89,19 @@ begin
   exit(false);
 end;
 
+function TPlayerManager.getSkills(): string;
+var
+  i: integer;
+  str: string = '[';
+begin
+  for i := 0 to SKILL_COUNT - 1 do
+  begin
+    if i > 0 then str += ',';
+    str += intToStr(tabStats.getSkillLevel(i));
+  end;
+  exit(str + ']');
+end;
+
 function TPlayerManager.isActive(): boolean;
 begin
   exit(isLoggedIn() and players[currentPlayer].isActive);

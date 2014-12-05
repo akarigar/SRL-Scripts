@@ -31,6 +31,21 @@ begin
   self.__loadResources();
 end;
 
+function TResourceManager.toString(): string;
+var
+  i: integer;
+  str: string = '{';
+  keys: TVariantSet;
+begin
+  keys := self.__resources.keys();
+  for i := 0 to high(keys) do
+  begin
+    if i > 0 then str += ',';
+    str += format('"%s":%d', [keys[i], self.__resources.get(keys[i])^]);
+  end;
+  exit(str + '}');
+end;
+
 procedure TResourceManager.updateResource(name: string; delta: integer);
 var amount: ^Variant;
 begin
