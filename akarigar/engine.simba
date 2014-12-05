@@ -7,10 +7,18 @@
 {$include_once srl-6/srl.simba}
 {$include_once srl-6/lib/misc/srlplayerform.simba}
 
-{$include_once engine/core/activitymanager.simba}
+{$include_once SPS/lib/sps-rs3.simba}
+
+
+{$include_once engine/util/util.simba}
+
+{$include_once engine/core/objectsettings.simba}
+{$include_once engine/core/item.simba}
 {$include_once engine/core/playermanager.simba}
 {$include_once engine/core/resourcemanager.simba}
-{$include_once engine/util/bank.simba}
+{$include_once engine/core/task.simba}
+{$include_once engine/core/activity.simba}
+{$include_once engine/core/activitymanager.simba}
 {$f-}
 
 type TEngine = record

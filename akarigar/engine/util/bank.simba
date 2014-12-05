@@ -1,4 +1,3 @@
-{$include_once srl-6/lib/interfaces/bankscreen.simba}
 {$f-}
 
 function TRSBankScreen.withdraw(item: string; amount: integer; toFamiliar: boolean = false): boolean; overload;

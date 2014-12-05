@@ -1,7 +1,3 @@
-{$include_once item.simba}
-{$include_once objectsettings.simba}
-{$include_once resourcemanager.simba}
-{$include_once ../util/util.simba}
 {$f-}
 
 {

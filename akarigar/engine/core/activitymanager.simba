@@ -1,8 +1,5 @@
+{$include_once ../util/bank.simba}
 {$include_once ../util/loader.simba}
-{$include_once ../util/util.simba}
-{$include_once activity.simba}
-{$include_once playermanager.simba}
-{$include_once task.simba}
 {$f-}
 
 const __PAGE__ = 'http://akarigar.com/srl/next.php';
