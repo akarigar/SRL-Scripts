@@ -14,20 +14,6 @@ begin
   end;
 end;
 
-procedure TActivity.__processRequirement(xml: string);
-var
-  i: integer;
-  resources: TStringArray;
-begin
-  resources := multiBetween(xml, '<item ', '</item>');
-
-  for i := 0 to high(resources) do
-  begin
-    self.requirement.items.append(between('>', '<', resources[i]));
-    self.requirement.amounts.append(strToInt(between('amount="', '"', resources[i])));
-  end;
-end;
-
 procedure TActivity.fromString(xml: string);
 var
   i: integer;

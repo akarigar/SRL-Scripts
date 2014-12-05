@@ -23,7 +23,6 @@ end;
 procedure TItemArray.addAll(xml: TStringArray);
 var i: integer;
 begin
-  writeln(xml);
   for i := 0 to high(xml) do
     self.add(xml[i]);
 end;

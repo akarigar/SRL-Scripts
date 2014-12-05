@@ -9,6 +9,7 @@ const __PAGE__ = 'http://akarigar.com/srl/next.php';
 
 type TActivityManager = record
   __currentActivity: PActivity;
+  __makePreset: boolean;
   __previousStatus: TTaskStatus;
 end;
 
@@ -23,21 +24,17 @@ begin
   self.__currentActivity := nil;
 end;
 
-function TActivityManager.getCurrentActivity(): PActivity;
-begin
-  exit(self.__currentActivity);
-end;
-
 function TActivityManager.isActivityDone(): boolean;
 begin
-  exit((__previousStatus <= TTaskStatus.ERR) or (self.getCurrentActivity()^.isDone()));
+  exit((__previousStatus <= TTaskStatus.ERR) or (self.__currentActivity^.isDone()));
 end;
 
 function TActivityManager.next(): PActivity;
 begin
   self.destroy();
   self.__currentActivity := Activity(getPage(__PAGE__));
-  exit(self.getCurrentActivity());
+  self.__makePreset := true;
+  exit(self.__currentActivity);
 end;
 
 procedure TActivityManager.printProgress(timeRan: integer);
@@ -49,16 +46,16 @@ begin
   with players[currentPlayer] do
   begin
     writeLn('================================================================');
-    writeLn(self.getCurrentActivity()^.name, ' Progress Report');
+    writeLn(self.__currentActivity^.name, ' Progress Report');
     writeLn('Player[', currentPlayer, ']: ', nickname);
     writeLn('Played for ', msToTime(timeRan, TIME_FORMAL));
     writeLn('Breaked for ', msToTime(integers[P_TIME_BREAKED], TIME_FORMAL),' (',
             integers[P_BREAK_COUNT], ' breaks)');
 
     writeLn('Activity looped ', integers[P_LOOP_COUNT], ' times');
-    for i := 0 to high(self.getCurrentActivity()^.tasks) do
+    for i := 0 to high(self.__currentActivity^.tasks) do
     begin
-      totalXp += self.getCurrentActivity()^.tasks[i]^.reportProgress(timeRan);
+      totalXp += self.__currentActivity^.tasks[i]^.reportProgress(timeRan);
     end;
 
     writeLn(formatProgressLine('Total XP', round(totalXp), timeRan));
@@ -72,12 +69,19 @@ var
   i: integer;
   task: PTask;
 begin
-  if (self.getCurrentActivity() = nil) or (self.getCurrentActivity()^.tasks.size() = 0) then
+  if (self.__currentActivity = nil) or (self.__currentActivity^.tasks.size() = 0) then
     exit(false);
 
-  for i := 0 to high(self.getCurrentActivity()^.tasks) do
+  if self.__makePreset then
   begin
-    task := self.getCurrentActivity()^.tasks[i];
+    self.__makePreset = false;
+    if not bankScreen.makePreset(@self.__currentActivity^.recipe.itemsIn) then
+      exit(false);
+  end;
+
+  for i := 0 to high(self.__currentActivity^.tasks) do
+  begin
+    task := self.__currentActivity^.tasks[i];
     wait(gaussRangeInt(0, 1200));
 
     writeLn('Starting task "', task^.name, '"');

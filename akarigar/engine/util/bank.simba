@@ -15,14 +15,14 @@ begin
   exit(self.withdraw(1, amount, [item, copy(item, 2)], toFamiliar));
 end;
 
-function TRSBankScreen.makePreset(items: TStringArray; amounts: TIntegerArray): boolean;
+function TRSBankScreen.makePreset(items: ^TItemArray): boolean
 var i: integer;
 begin
-  if (length(items) <= 0) or (length(items) <> length(amounts)) then exit(false);
+  if (items = nil) or (length(items^) = 0) then exit(true);
 
-  for i := 0 to high(items) do
+  for i := 0 to high(items^) do
   begin
-    if not self.withdraw(items[i], amounts[i]) then exit(false);
+    if not self.withdraw(items^[i].name, items^[i].amount) then exit(false);
     wait(randomRange(250, 750));
     if not self.clickButton(BANK_BUTTON_SEARCH) then exit(false);
     wait(randomRange(250, 750));

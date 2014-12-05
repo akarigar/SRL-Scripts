@@ -5,10 +5,6 @@
 type TActivity = record
   name: string;
   recipe: TRecipe;
-  requirement: record
-    items: TStringArray;
-    amounts: TIntegerArray;
-  end;
   tasks: TTaskList;
   setup: function(): boolean of object;
   quota: integer;
