@@ -27,7 +27,7 @@ begin
   if self.quota = 0 then exit(false);
 
   for i := 0 to high(self.tasks) do
-    items += self.tasks[i]^.itemsGained;
+    items += self.tasks[i]^.itemsGained();
 
   exit(items >= self.quota);
 end;

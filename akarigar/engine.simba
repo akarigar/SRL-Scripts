@@ -105,45 +105,43 @@ begin
   while players.getActive() > 0 do
   begin
     timer.start();
-    if not isLoggedIn() then players[currentPlayer].login();
-    wait(Random(500, 1500));
-    closeAdWindow();
-    closePollWindow();
-    exitTreasure();
-    mainscreen.setAngle(MS_ANGLE_HIGH);
-
-    // Setup activity if needed & only start loop if everything is fine.
-    self.__activityManager.next();
+    if players[currentPlayer].login() and playerManager.randomlyWait(500, 1500) then
+    begin
+      closeAdWindow();
+      closePollWindow();
+      exitTreasure();
+      mainscreen.setAngle(MS_ANGLE_HIGH);
+    end;
 
     with players[currentPlayer] do
     begin
+      // Setup activity & start loop if everything is fine.
+      isActive := self.__activityManager.next() <> nil;
+
       while playerManager.isActive() and (not self.__activityManager.isActivityDone()) and
-          ((not booleans[P_TAKE_BREAKS]) or (timer.getTime() <= integers[P_NEXT_BREAK])) do
+            (not playerManager.isBreakTime(timer.getTime())) do
       begin
-        isActive := self.__activityManager.run();
+        if not self.__activityManager.run() then break;
         inc(integers[P_LOOP_COUNT]);
 
         self.__activityManager.printProgress(integers[P_TIME_RAN] + timer.getTime());
       end;
     end;
     writeLn('isDone? ', self.__activityManager.isActivityDone());
+    writeln('isActive?', playerManager.isActive());
+    writeln('isBreakTime?', playerManager.isBreakTime(timer.getTime()));
     inc(players[currentPlayer].integers[P_TIME_RAN], timer.getTime());
 
-    if self.__activityManager.isActivityDone() then
-      self.__activityManager.next()
-
-    if players[currentPlayer].isActive then
-      if timer.getTime() > players[currentPlayer].integers[P_NEXT_BREAK] then
-        playerManager.takeBreak()
-    else if players.getActive() > 0 then
+    if not players[currentPlayer].isActive then
     begin
-      players.randomNext(false);
+      players[currentPlayer].logout();
+      if players.getActive() > 0 then players.randomNext(false);
       resourceManager.setup(players[currentPlayer].nickname);
+      continue;
     end;
 
-    if isLoggedIn() then
-      players[currentPlayer].logout();
-    timer.reset();
+    if playerManager.isBreakTime(timer.getTime()) then
+      playerManager.takeBreak();
   end;
 end;
 

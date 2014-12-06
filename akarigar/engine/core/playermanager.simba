@@ -82,7 +82,7 @@ begin
     if self.randomlyWait() and isMouseOverText(obj^.overText) then
     begin
       if length(obj^.optionText) = 0 then exit(true);
-      fastClick(mouse_Right);
+      fastClick(MOUSE_RIGHT);
       if chooseOption.optionsExist(obj^.optionText) then exit(true);
     end;
   end;
@@ -105,6 +105,14 @@ end;
 function TPlayerManager.isActive(): boolean;
 begin
   exit(isLoggedIn() and players[currentPlayer].isActive);
+end;
+
+function TPlayerManager.isBreakTime(timeRan: LongWord): boolean;
+begin
+  exit(
+    (players[currentPlayer].booleans[P_TAKE_BREAKS]) and
+    (timeRan >= players[currentPlayer].integers[P_NEXT_BREAK])
+  );
 end;
 
 procedure TPlayerManager.loadArea(mapName: string);
@@ -136,10 +144,10 @@ begin
       else exitToLobby();
 
     timer.start();
-    while (timeRemaining := time - timer.getTime()) > 45000 do
+    while (timeRemaining := time - timer.getTime()) > 60000 do
     begin
       writeLn('Break finishes in ', msToTime(timeRemaining, TIME_SHORT));
-      wait(45000);
+      wait(60000);
     end;
     if timeRemaining > 0 then
       wait(timeRemaining);
@@ -158,7 +166,7 @@ begin
   if length(obj^.optionText) = 0 then
   begin
     wait(100 + random(250));
-    fastClick(mouse_left);
+    fastClick(MOUSE_LEFT);
     exit(self.randomlyWait() and minimap.waitPlayerMoving());
   end;
   exit(self.randomlyWait() and chooseOption.select(obj^.optionText) and minimap.waitPlayerMoving());

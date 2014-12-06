@@ -15,7 +15,7 @@ type TTaskStatus = (
 
 type TTask = record
   name: string;
-  location, tries, flag, itemsGained: integer;
+  location, tries, flag, loopCount: integer;
   recipe: TRecipe;
   pathToObject, objectLocations: TPointArray;
   objectSettings: PObjectSettings;
@@ -42,7 +42,6 @@ var i: integer;
 begin
   self.name := name;
   self.location := strToInt(between('<loc>', '</loc>', data));
-  self.tries := FAIL_MAX;
   self.flag := strToInt(between('<flag>', '</flag>', data));
   self.pathToObject := strToTPA(between('<pto>', '</pto>', data));
   self.objectLocations := strToTPA(between('<ol>', '</ol>', data));
@@ -51,15 +50,27 @@ begin
   self.__run := f;
   self.reportProgress := self.__reportTaskProgress;
 
+  self.tries := FAIL_MAX;
+  self.loopCount := 0;
+
   // Make the DTMs
   for i := 0 to high(self.recipe.itemsOut) do
     self.recipe.itemsOut[i].dtm := dtmFromString(self.recipe.itemsOut[i].dtmString);
+end;
+
+function TTask.itemsGained(): integer;
+var i, count: integer = 0;
+begin
+  for i := 0 to high(self.recipe.itemsOut) do
+    count += self.recipe.itemsOut[i].count;
+  exit(count);
 end;
 
 function TTask.run(): TTaskStatus;
 var count, i, j: integer;
 begin
   result := self.__run();
+  inc(self.loopCount);
 
   // Update resources based on what has been produced
   for i := 0 to high(self.recipe.itemsOut) do
