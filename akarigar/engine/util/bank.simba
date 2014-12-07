@@ -43,8 +43,6 @@ begin
   selectGrid := grid(1, 11, 16, 17, 21, 28, point(370, 223));
   if not findColorTolerance(x, y, 4965358, selectGrid.getBounds(), 20, colorSetting(2, 0.02, 0.58)) then
   begin
-    writeln('no findy color');
-    terminatescript();
     selectGrid[0].mouse(MOUSE_LEFT);
     x := selectGrid[0].getMiddle().x;
     y := selectGrid[0].getMiddle().y;
@@ -60,10 +58,10 @@ begin
   wait(randomRange(750, 1500));
   mouseBox(intToBox(113, 355, 210, 380), MOUSE_LEFT);
 
-  wait(gaussRangeInt(500, 1500));
-  exit(multiType(VK_ESCAPE, randomRange(30, 50), 1));
-  wait(randomRange(500, 1500));
-  exit(true);
+  wait(gaussRangeInt(750, 1500));
+  mouseBox(intToBox(766, 28, 777, 40), MOUSE_LEFT);
+  wait(randomRange(750, 1500));
+  exit(bankScreen.close());
 end;
 
 {$f+}

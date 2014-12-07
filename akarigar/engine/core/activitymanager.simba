@@ -6,7 +6,6 @@ const __URL__ = 'http://akarigar.com/srl/activity/next/?items=%s&skills=%s';
 
 type TActivityManager = record
   __currentActivity: PActivity;
-  __makePreset: boolean;
   __previousStatus: TTaskStatus;
 end;
 
@@ -30,8 +29,6 @@ function TActivityManager.next(): PActivity;
 begin
   self.destroy();
   self.__currentActivity := Activity(getPage(self.__getUrl()));
-  writeln(self.__getUrl());
-  self.__makePreset := true;
   exit(self.__currentActivity);
 end;
 
