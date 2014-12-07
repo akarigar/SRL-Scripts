@@ -88,6 +88,7 @@ var
   i: integer;
   totalXp, xp: extended = 0;
 begin
+  if self.name = 'Bank' then exit(0);
   for i := 0 to high(self.recipe.itemsOut) do
   begin
     xp := self.recipe.itemsOut[i].count * self.recipe.itemsOut[i].xp;

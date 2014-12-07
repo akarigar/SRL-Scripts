@@ -15,33 +15,55 @@ begin
 end;
 
 function TRSBankScreen.makePreset(items: ^TItemArray): boolean
-var i: integer;
+var
+  i, x, y, slot: integer;
+  selectGrid: TBoxArray;
 begin
   if (items = nil) or (length(items^) = 0) then exit(true);
 
+  if (bankScreen.getPackCount() > 0) and
+     (not bankScreen.quickDeposit(QUICK_DEPOSIT_INVENTORY)) then
+    exit(false);
+
   for i := 0 to high(items^) do
   begin
+    wait(randomRange(250, 750));
     if not self.withdraw(items^[i].name, items^[i].amount) then exit(false);
     wait(randomRange(250, 750));
-    if not self.clickButton(BANK_BUTTON_SEARCH) then exit(false);
-    wait(randomRange(250, 750));
+    if (i < high(items^)) and (not self.clickButton(BANK_BUTTON_SEARCH)) then exit(false);
   end;
 
   // Setup preset
-  wait(250);
+  wait(randomRange(500, 1000));
   if not self.clickButton(BANK_BUTTON_PRESET_SETUP, random() > 0.5) then exit(false);
 
-  wait(randomRange(750, 1500));
-  mouseBox(IntToBox(225, 215, 240, 230), MOUSE_LEFT);
+  // Figure out which box is selected (or select one if nothing is selected) and
+  // click the corresponding save button
+  wait(randomRange(500, 1000));
+  selectGrid := grid(1, 11, 16, 17, 21, 28, point(370, 223));
+  if not findColorTolerance(x, y, 4965358, selectGrid.getBounds(), 20, colorSetting(2, 0.02, 0.58)) then
+  begin
+    writeln('no findy color');
+    terminatescript();
+    selectGrid[0].mouse(MOUSE_LEFT);
+    x := selectGrid[0].getMiddle().x;
+    y := selectGrid[0].getMiddle().y;
+  end;
+  slot := selectGrid.indexInArray(Point(x, y));
+
+  wait(randomRange(250, 750));
+  gridBox(slot, 1, 11, 20, 24, 27, 28, point(235, 223)).mouse(MOUSE_LEFT);
 
   wait(randomRange(750, 1500));
-  mouseBox(IntToBox(45, 502, 160, 525), MOUSE_LEFT);
+  mouseBox(intToBox(45, 502, 160, 525), MOUSE_LEFT);
 
   wait(randomRange(750, 1500));
-  mouseBox(IntToBox(113, 355, 210, 380), MOUSE_LEFT);
+  mouseBox(intToBox(113, 355, 210, 380), MOUSE_LEFT);
 
-  wait(randomRange(500, 1500));
+  wait(gaussRangeInt(500, 1500));
   exit(multiType(VK_ESCAPE, randomRange(30, 50), 1));
+  wait(randomRange(500, 1500));
+  exit(true);
 end;
 
 {$f+}

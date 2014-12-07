@@ -11,13 +11,17 @@ begin
 end;
 
 function TBankTask.__bank(): TTaskStatus;
-var i: integer = 0;
+var i: integer;
 begin
   while (playerManager.randomlyWait()) and
         (not bankScreen.open(self.bankType)) and
         (inc(i) < self.tries) do;
   if i >= self.tries then exit(TTaskStatus.ERR);
   i := 0;
+
+  if (self.loopCount = 0) and (length(self.recipe.itemsIn) > 0) then
+    if bankScreen.makePreset(@self.recipe.itemsIn) then exit(TTaskStatus.DONE)
+    else exit(TTaskStatus.ERR);
 
   while (playerManager.randomlyWait()) and
         (not self.__doTransaction()) and

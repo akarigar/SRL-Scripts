@@ -55,4 +55,12 @@ begin
   exit(tpa);
 end;
 
+function TBoxArray.indexInArray(const p: TPoint): integer;
+var i: integer;
+begin
+  for i := 0 to high(self) do
+    if self[i].isPointInside(p) then exit(i);
+  exit(-1);
+end;
+
 {$f+}
