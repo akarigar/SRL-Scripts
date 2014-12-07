@@ -19,11 +19,12 @@ var
   i: integer;
   taskData: TStringArray;
 begin
-  // Process name & quota
+  // Process name, id & recipe
   self.name := between('name="', '"', xml);
   self.id := strToInt(between('id="', '"', xml));
   self.recipe.fromXml(between('<recipe>', '</recipe>', xml));
 
+  // Process quota
   if pos('<quota>', xml) > 0 then
     self.quota := strToInt(between('<quota>', '</quota>', xml));
 

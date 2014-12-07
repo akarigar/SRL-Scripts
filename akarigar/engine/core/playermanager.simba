@@ -115,6 +115,11 @@ begin
   );
 end;
 
+function TPlayerManager.isMember(): boolean;
+begin
+  exit(players[currentPlayer].isMember);
+end;
+
 procedure TPlayerManager.loadArea(mapName: string);
 begin
   currentArea.setup(mapName, RUNESCAPE_OTHER);

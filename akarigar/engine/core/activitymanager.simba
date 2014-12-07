@@ -85,14 +85,17 @@ end;
 function TActivityManager.__getUrl(): string;
 var activityId: integer = 0;
 begin
-  if self.__currentActivity <> nil then activityId := self.__currentActivity.id;
-  exit(stringReplace(
-    format(__URL__, [resourceManager.toString(), playerManager.getSkills()]),
-    activityId,
+  if self.__currentActivity <> nil then activityId := self.__currentActivity^.id;
+  result := stringReplace(
+    format(
+      __URL__,
+      [activityId, resourceManager.toString(), playerManager.getSkills()]
+    ),
     ' ',
     '%20',
     [rfReplaceAll]
-  ));
+  );
+  if playerManager.isMember() then result += '&member=1';
 end;
 
 {$f+}
