@@ -2,7 +2,7 @@
 {$include_once ../util/loader.simba}
 {$f-}
 
-const __URL__ = 'http://akarigar.com/srl/activity/next/?items=%s&skills=%s';
+const __URL__ = 'http://akarigar.com/srl/activity/%d/next/?items=%s&skills=%s';
 
 type TActivityManager = record
   __currentActivity: PActivity;
@@ -83,9 +83,12 @@ begin
 end;
 
 function TActivityManager.__getUrl(): string;
+var activityId: integer = 0;
 begin
+  if self.__currentActivity <> nil then activityId := self.__currentActivity.id;
   exit(stringReplace(
     format(__URL__, [resourceManager.toString(), playerManager.getSkills()]),
+    activityId,
     ' ',
     '%20',
     [rfReplaceAll]

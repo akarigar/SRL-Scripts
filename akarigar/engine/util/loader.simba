@@ -21,6 +21,7 @@ var
 begin
   // Process name & quota
   self.name := between('name="', '"', xml);
+  self.id := strToInt(between('id="', '"', xml));
   self.recipe.fromXml(between('<recipe>', '</recipe>', xml));
 
   if pos('<quota>', xml) > 0 then

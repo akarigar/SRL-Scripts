@@ -1,11 +1,11 @@
 {$f-}
 
 type TActivity = record
+  id, quota: integer;
   name: string;
   recipe: TRecipe;
   tasks: TTaskList;
   setup: function(): boolean of object;
-  quota: integer;
 end;
 
 type PActivity = ^TActivity;
