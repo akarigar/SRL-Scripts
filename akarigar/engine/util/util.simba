@@ -55,6 +55,15 @@ begin
   exit(tpa);
 end;
 
+procedure T2DPointArray.prune(minLength: integer);
+var i: integer;
+begin
+  if minLength <= 0 then exit;
+  for i := high(self) downto 0 do
+    if length(self[i]) < minLength then
+      self.deleteIndex(i);
+end;
+
 function TBoxArray.indexInArray(const p: TPoint): integer;
 var i: integer;
 begin

@@ -51,11 +51,17 @@ begin
 
   // Filter out the player & make a sorted TPointArray
   mainscreen.filterPointsPlayer(tpa);
-  atpa := tpa.toATPA(25, 25);
-  if obj^.sort = 1 then
-    if obj^.relation = 2 then
-      atpa.sortFromMidPoint(relativeBounds.getMiddle())
-    else atpa.sortFromMidPoint(mainscreen.playerPoint)
+
+  if obj^.mode = 0 then
+    atpa := tpa.toATPA(obj^.w, obj^.h)
+  else if obj^.mode = 1 then
+    atpa := tpa.cluster(obj^.w, obj^.h);
+
+  //atpa.prune(obj^.min);
+  if (obj^.sort = 1) and (obj^.relation = 2) then
+    atpa.sortFromMidPoint(relativeBounds.getMiddle())
+  else if obj^.sort = 1 then
+    atpa.sortFromMidPoint(mainscreen.playerPoint)
   else if obj^.sort = 2 then
     atpa.sortBySize();
 
@@ -79,7 +85,7 @@ begin
   for i := 0 to high(atpa) do
   begin
     b := atpa[i].getBounds();
-    mouseBox(b);
+    mouse(atpa[i][random(length(atpa[i]))]);
     if self.randomlyWait() and isMouseOverText(obj^.overText) then
     begin
       if length(obj^.optionText) = 0 then exit(true);
@@ -200,7 +206,7 @@ var
   path: TPointArray;
 begin
   p := self.area.getPlayerPos();
-  if (p.x = -1) or (p.y = -1) or (dest.x = -1) or (dest.y = -1) then exit(false);
+  if (p.x = -1) or (p.y = -1) or (dest.x = -1) or (dest.y = -1) then exit(true);
   dx := dy := 20;
   if p.x > dest.x then dx *= -1;
   if p.y > dest.y then dy *= -1;
