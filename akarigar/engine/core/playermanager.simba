@@ -15,6 +15,7 @@ const
 
 type TPlayerManager = record
   area: TSPSArea;
+  __nextBreakTime: LongWord;
 end;
 
 var currentArea: TSPSArea;
@@ -107,11 +108,11 @@ begin
   exit(isLoggedIn() and players[currentPlayer].isActive);
 end;
 
-function TPlayerManager.isBreakTime(timeRan: LongWord): boolean;
+function TPlayerManager.isBreakTime(): boolean;
 begin
   exit(
     (players[currentPlayer].booleans[P_TAKE_BREAKS]) and
-    (timeRan >= players[currentPlayer].integers[P_NEXT_BREAK])
+    (getSystemTime() > self.__nextBreakTime)
   );
 end;
 
@@ -130,6 +131,12 @@ function TPlayerManager.randomlyWait(min: integer = 250; max: integer = 750): bo
 begin
   wait(gaussRangeInt(min, max));
   exit(true);
+end;
+
+procedure TPlayerManager.setupBreak();
+begin
+  self.__nextBreakTime :=
+    getSystemTime() + getGaussRangePercentage(players[currentPlayer].integers[P_PLAY_TIME], 0.2);
 end;
 
 procedure TPlayerManager.takeBreak();
@@ -159,7 +166,7 @@ begin
 
     inc(integers[P_TIME_BREAKED], timer.getTime());
     inc(integers[P_BREAK_COUNT]);
-    integers[P_NEXT_BREAK] := getGaussRangePercentage(integers[P_PLAY_TIME], 0.2);
+    self.setupBreak();
     writeLn('Break finished. Resuming script');
   end;
 end;

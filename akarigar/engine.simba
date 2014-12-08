@@ -98,13 +98,19 @@ begin
   end;
 end;
 
+procedure TEngine.__notifyNewPlayer();
+begin
+  self.__activityManager.destroy();
+  playerManager.setupBreak();
+  resourceManager.setup(players[currentPlayer].nickname);
+end;
+
 procedure TEngine.__runLoop();
-var timer: TTimeMarker;
 begin
   print('TEngine.__runLoop()');
+  self.__notifyNewPlayer();
   while players.getActive() > 0 do
   begin
-    timer.start();
     if players[currentPlayer].login() and playerManager.randomlyWait(500, 1500) then
     begin
       closeAdWindow();
@@ -115,33 +121,36 @@ begin
 
     with players[currentPlayer] do
     begin
-      // Setup activity & start loop if everything is fine.
-      isActive := self.__activityManager.next() <> nil;
+      // Setup activity if needed & start loop if everything is fine.
+      if self.__activityManager.isActivityDone() then
+        isActive := self.__activityManager.next() <> nil;
 
       while playerManager.isActive() and (not self.__activityManager.isActivityDone()) and
-            (not playerManager.isBreakTime(timer.getTime())) do
+            (not playerManager.isBreakTime()) do
       begin
+        self.__activityManager.printProgress();
         if not self.__activityManager.run() then break;
         inc(integers[P_LOOP_COUNT]);
-
-        self.__activityManager.printProgress(integers[P_TIME_RAN] + timer.getTime());
       end;
     end;
     writeLn('isDone? ', self.__activityManager.isActivityDone());
-    writeln('isActive?', playerManager.isActive());
-    writeln('isBreakTime?', playerManager.isBreakTime(timer.getTime()));
-    inc(players[currentPlayer].integers[P_TIME_RAN], timer.getTime());
+    writeln('isActive? ', playerManager.isActive());
+    writeln('isBreakTime? ', playerManager.isBreakTime());
+    inc(players[currentPlayer].integers[P_TIME_RAN], self.__activityManager.timeRan());
 
     if not players[currentPlayer].isActive then
     begin
       players[currentPlayer].logout();
       if players.getActive() > 0 then players.randomNext(false);
-      resourceManager.setup(players[currentPlayer].nickname);
+      self.__notifyNewPlayer();
       continue;
     end;
 
-    if playerManager.isBreakTime(timer.getTime()) then
+    if playerManager.isBreakTime() then
+    begin
+      self.__activityManager.pause();
       playerManager.takeBreak();
+    end;
   end;
 end;
 
@@ -157,7 +166,6 @@ begin
   {$ENDIF}
   if not setupSRL() then exit(false);
 
-  resourceManager.setup(players[currentPlayer].nickname);
   addOnTerminate('destroyEngine');
   self.__runLoop();
   exit(true);

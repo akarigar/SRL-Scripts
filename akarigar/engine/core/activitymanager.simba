@@ -5,6 +5,7 @@
 const __URL__ = 'http://akarigar.com/srl/activity/%d/next/?items=%s&skills=%s';
 
 type TActivityManager = record
+  __activityTimer: TTimeMarker;
   __currentActivity: PActivity;
   __previousStatus: TTaskStatus;
 end;
@@ -22,17 +23,28 @@ end;
 
 function TActivityManager.isActivityDone(): boolean;
 begin
-  exit((__previousStatus <= TTaskStatus.ERR) or (self.__currentActivity^.isDone()));
+  exit(
+    (__previousStatus <= TTaskStatus.ERR) or
+    (self.__currentActivity = nil) or
+    (self.__currentActivity^.isDone())
+  );
 end;
 
 function TActivityManager.next(): PActivity;
 begin
   self.destroy();
   self.__currentActivity := Activity(getPage(self.__getUrl()));
+  self.__activityTimer.reset();
+  self.__activityTimer.start();
   exit(self.__currentActivity);
 end;
 
-procedure TActivityManager.printProgress(timeRan: integer);
+procedure TActivityManager.pause();
+begin
+  self.__activityTimer.pause();
+end;
+
+procedure TActivityManager.printProgress();
 var
   i: integer;
   totalXp: extended = 0;
@@ -43,17 +55,15 @@ begin
     writeLn('================================================================');
     writeLn(self.__currentActivity^.name, ' Progress Report');
     writeLn('Player[', currentPlayer, ']: ', nickname);
-    writeLn('Played for ', msToTime(timeRan, TIME_FORMAL));
+    writeLn('Played for ', msToTime(self.timeRan(), TIME_FORMAL));
     writeLn('Breaked for ', msToTime(integers[P_TIME_BREAKED], TIME_FORMAL),' (',
             integers[P_BREAK_COUNT], ' breaks)');
 
     writeLn('Activity looped ', integers[P_LOOP_COUNT], ' times');
     for i := 0 to high(self.__currentActivity^.tasks) do
-    begin
-      totalXp += self.__currentActivity^.tasks[i]^.reportProgress(timeRan);
-    end;
+      totalXp += self.__currentActivity^.tasks[i]^.reportProgress(self.timeRan());
 
-    writeLn(formatProgressLine('Total XP', round(totalXp), timeRan));
+    writeLn(formatProgressLine('Total XP', round(totalXp), self.timeRan()));
     writeLn('================================================================');
   end;
 end;
@@ -66,6 +76,10 @@ var
 begin
   if (self.__currentActivity = nil) or (self.__currentActivity^.tasks.size() = 0) then
     exit(false);
+
+  // Start timer if paused
+  if self.__activityTimer.paused then
+    self.__activityTimer.start();
 
   for i := 0 to high(self.__currentActivity^.tasks) do
   begin
@@ -80,6 +94,11 @@ begin
     if self.__previousStatus <= TTaskStatus.ERR then exit(false);
   end;
   exit(true);
+end;
+
+function TActivityManager.timeRan(): LongWord;
+begin
+  exit(self.__activityTimer.getTime());
 end;
 
 function TActivityManager.__getUrl(): string;
