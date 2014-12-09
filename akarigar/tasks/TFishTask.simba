@@ -48,8 +48,9 @@ function TFishTask.__tryFishing(): boolean;
 var i: integer;
 begin
   for i := 0 to length(self.objectLocations) * 2 - 1 do
-    if playerManager.walkTo(self.objectLocations[i mod length(self.objectLocations)]) and
-       playerManager.useObject(self.objectSettings) then exit(true);
+    if playerManager.walkTo(
+         self.objectLocations[i mod length(self.objectLocations)], self.location
+        ) and playerManager.useObject(self.objectSettings) then exit(true);
   exit(false);
 end;
 

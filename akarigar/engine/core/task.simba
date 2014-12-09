@@ -71,22 +71,10 @@ begin
 end;
 
 function TTask.run(): TTaskStatus;
-var count, i, j: integer;
 begin
   result := self.__run();
   inc(self.loopCount);
-
-  // Update resources based on what has been produced
-  for i := 0 to high(self.recipe.itemsOut) do
-  begin
-    if self.recipe.itemsOut[i].dtm = __NO_DTM__ then continue;
-
-    count := tabBackpack.countDtm(self.recipe.itemsOut[i].dtm);
-    inc(self.recipe.itemsOut[i].count, count);
-    resourceManager.updateResource(self.recipe.itemsOut[i].name, count);
-    for j := 0 to high(self.recipe.itemsIn) do
-      resourceManager.updateResource(self.recipe.itemsIn[i].name, -count);
-  end;
+  self.__updateResources();
 end;
 
 function TTask.__reportTaskProgress(timeRan: integer): extended;
@@ -111,6 +99,25 @@ begin
     ));
   end;
   exit(totalXp);
+end;
+
+{ Update resources based on what has been produced. }
+procedure TTask.__updateResources();
+var count, i, j: integer;
+begin
+  for i := 0 to high(self.recipe.itemsOut) do
+  begin
+    if length(self.recipe.itemsOut[i].dtmString) = 0 then
+      count := 28 - tabBackpack.count()
+    else begin
+      count := tabBackpack.countDtm(self.recipe.itemsOut[i].dtm);
+      inc(self.recipe.itemsOut[i].count, count);
+      resourceManager.updateResource(self.recipe.itemsOut[i].name, count);
+    end;
+
+    for j := 0 to high(self.recipe.itemsIn) do
+      resourceManager.updateResource(self.recipe.itemsIn[i].name, -count);
+  end;
 end;
 
 type TTaskList = array of PTask;

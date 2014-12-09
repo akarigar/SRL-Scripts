@@ -13,14 +13,14 @@ const
   // Booleans
   P_TAKE_BREAKS := 99;
 
+
 type TPlayerManager = record
-  area: TSPSArea;
+  area: ^TSPSArea;
+  currentLocation: integer;
   __nextBreakTime: LongWord;
 end;
 
-var currentArea: TSPSArea;
-
-var playerManager: TPlayerManager;
+var playerManager: TPlayerManager = [nil, -1, 0];
 
 function TPlayerManager.findObject(obj: PObjectSettings; out b: Tbox): boolean;
 var
@@ -127,10 +127,11 @@ begin
   exit(players[currentPlayer].isMember);
 end;
 
-procedure TPlayerManager.loadArea(mapName: string);
+procedure TPlayerManager.loadArea(location: integer);
 begin
-  currentArea.setup(mapName, RUNESCAPE_OTHER);
-  self.area := currentArea;
+  if self.area <> nil then dispose(self.area);
+  new(self.area);
+  self.area^.setup('LOCATION_' + intToStr(location), RUNESCAPE_OTHER);
 end;
 
 function TPlayerManager.randomlyWait(min: integer = 250; max: integer = 750): boolean;
@@ -211,22 +212,24 @@ begin
   {$ENDIF}
 end;
 
-function TPlayerManager.walkPath(path: TPointArray): boolean;
+function TPlayerManager.walkPath(path: TPointArray; location: integer): boolean;
 begin
   if length(path) = 0 then exit(true);
-  exit(self.area.walkPath(path) or self.walkTo(path[high(path)]));
+  if not self.__ensureCorrectLocation(location) then exit(false);
+  exit(self.area^.walkPath(path) or self.walkTo(path[high(path)], location));
 end;
 
 {
   Tries to walk to the given point in a straight line.
 }
-function TPlayerManager.walkTo(dest: TPoint): boolean;
+function TPlayerManager.walkTo(dest: TPoint; location: integer): boolean;
 var
   dx, dy, stepX, stepY, i: integer;
   p: TPoint;
   path: TPointArray;
 begin
-  p := self.area.getPlayerPos();
+  if not self.__ensureCorrectLocation(location) then exit(false);
+  p := self.area^.getPlayerPos();
   if (p.x = -1) or (p.y = -1) or (dest.x = -1) or (dest.y = -1) then exit(true);
   dx := dy := 20;
   if p.x > dest.x then dx *= -1;
@@ -244,5 +247,13 @@ begin
     else p.y := dest.y;
     path[i] := Point(p.x, p.y);
   end;
-  exit(self.area.walkPath(path));
+  exit(self.area^.walkPath(path));
+end;
+
+function TPlayerManager.__ensureCorrectLocation(location: integer): boolean;
+begin
+  if self.currentLocation = location then exit(true);
+  currentLocation := location;
+  self.loadArea(location);
+  exit(lodestoneScreen.teleportTo(location) and self.randomlyWait(15000, 17000));
 end;

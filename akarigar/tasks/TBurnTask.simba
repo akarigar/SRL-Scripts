@@ -42,8 +42,7 @@ begin
     unlit := true;
     timer.start();
   end;
-  count -= tabBackpack.countDtm(dtm);
-  self.recipe.itemsOut[0].count := count;
+  inc(self.recipe.itemsOut[0].count, count - tabBackpack.countDtm(dtm));
   if tabBackpack.countDtm(dtm) = 0 then exit(TTaskStatus.DONE);
   exit(TTaskStatus.ERR);
 end;

@@ -31,9 +31,11 @@ begin
 end;
 
 function TActivityManager.next(): PActivity;
+var url: string;
 begin
+  url := self.__getUrl();
   self.destroy();
-  self.__currentActivity := Activity(getPage(self.__getUrl()));
+  self.__currentActivity := Activity(getPage(url));
   self.__activityTimer.reset();
   self.__activityTimer.start();
   exit(self.__currentActivity);
@@ -87,7 +89,7 @@ begin
     wait(gaussRangeInt(0, 1200));
 
     writeLn('Starting task "', task^.name, '"');
-    if not playerManager.walkPath(task^.pathToObject) then exit(false);
+    if not playerManager.walkPath(task^.pathToObject, task^.location) then exit(false);
     self.__previousStatus := task^.run();
     writeLn('Task "', task^.name, '" finished with status ', self.__previousStatus);
 

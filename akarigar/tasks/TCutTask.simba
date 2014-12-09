@@ -7,14 +7,13 @@ var
   i, len: integer = 0;
   timer: TTimeMarker;
 begin
-  //exit(TTaskStatus.DONE);
   len := length(self.objectLocations);
   timer.start();
   while (playerManager.isActive()) and (timer.getTime() < 30000) and (not tabBackpack.isFull()) do
   begin
     if playerManager.randomlyWait() and (not playerManager.useObject(self.objectSettings)) then
     begin
-      playerManager.walkTo(self.objectLocations[inc(i) mod len]);
+      playerManager.walkTo(self.objectLocations[inc(i) mod len], self.location);
       continue;
     end;
 
@@ -22,7 +21,7 @@ begin
     if playerManager.waitWhileWorking() then
     begin
       if random() > 0.2 then
-        playerManager.walkTo(self.objectLocations[inc(i) mod len]);
+        playerManager.walkTo(self.objectLocations[inc(i) mod len], self.location);
       timer.start();
     end;
   end;
