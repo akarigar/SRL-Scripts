@@ -57,7 +57,7 @@ begin
   else if obj^.mode = 1 then
     atpa := tpa.cluster(obj^.w, obj^.h);
 
-  //atpa.prune(obj^.min);
+  atpa.prune(obj^.min);
   if (obj^.sort = 1) and (obj^.relation = 2) then
     atpa.sortFromMidPoint(relativeBounds.getMiddle())
   else if obj^.sort = 1 then
@@ -188,6 +188,27 @@ begin
     exit(self.randomlyWait() and minimap.waitPlayerMoving());
   end;
   exit(self.randomlyWait() and chooseOption.select(obj^.optionText) and minimap.waitPlayerMoving());
+end;
+
+function TPlayerManager.waitWhileWorking(minShift: integer = 200): boolean;
+var
+  count: integer;
+  timer: TTimeMarker;
+begin
+  count := tabBackpack.count();
+  result := false;
+  timer.start();
+  while (count := getPixelShiftAverage(mainscreen.playerBox, 100, 1000)) >= minShift do
+  begin
+    {$IFDEF DEBUG}
+    writeln('Waiting while working, shift = ', count);
+    {$ENDIF}
+    result := true;
+    if SRL_Events[EVENT_ANTIBAN] <> nil then SRL_Events[EVENT_ANTIBAN]();
+  end;
+  {$IFDEF DEBUG}
+  writeln('Stopped working, shift = ', count);
+  {$ENDIF}
 end;
 
 function TPlayerManager.walkPath(path: TPointArray): boolean;

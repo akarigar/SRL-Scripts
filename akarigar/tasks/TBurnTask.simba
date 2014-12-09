@@ -1,0 +1,75 @@
+{$f-}
+
+type TBurnTask = TTask;
+
+function TBurnTask.__burn(): TTaskStatus;
+var
+  count, dtm: integer;
+  timer: TTimeMarker;
+  unlit: boolean = true;
+begin
+  if self.loopCount = 0 then
+     if (length(self.recipe.itemsIn) > 0) and (length(self.recipe.itemsOut) > 0) then
+      self.recipe.itemsOut[0].dtm := dtmFromString(self.recipe.itemsIn[0].dtmString)
+    else exit(TTaskStatus.ERR);
+  dtm := self.recipe.itemsOut[0].dtm;
+  count := tabBackpack.countDtm(dtm);
+
+  timer.start();
+  while (timer.getTime() < 30000) and (tabBackpack.countDtm(dtm) > 0) do
+  begin
+    if unlit and tabBackpack.clickDtm(dtm, MOUSE_RIGHT, 'Light', 300, false) then
+    begin
+      { TODO: Fix this later. We should move away to a random spot. }
+      if chatBox.findText(['light a fire here']) then exit(TTaskStatus.ERR);
+
+      timer.start();
+      while (timer.getTime() <= 10000) and
+            (not chatBox.findText(['fire catches and', 'begins to burn'])) do
+        wait(100 + random(50));
+      unlit := timer.getTime() > 10000;
+      playerManager.randomlyWait();
+    end;
+    if unlit then continue;
+
+    if not (tabBackpack.clickDtm(dtm, MOUSE_LEFT, '', 0, false) and
+       playerManager.randomlyWait() and toolScreen.isOpen(1000)) then continue;
+
+    if not toolScreen.select('bonfire') then
+      continue;
+
+    self.__waitForFireToEnd(dtm);
+    unlit := true;
+    timer.start();
+  end;
+  count -= tabBackpack.countDtm(dtm);
+  self.recipe.itemsOut[0].count := count;
+  if tabBackpack.countDtm(dtm) = 0 then exit(TTaskStatus.DONE);
+  exit(TTaskStatus.ERR);
+end;
+
+procedure TBurnTask.__waitForFireToEnd(dtm: integer);
+var
+  current, last: integer = 0;
+  timer: TTimeMarker;
+begin
+  timer.start();
+  while (timer.getTime() < 10000) and ((current := tabBackpack.countDtm(dtm)) > 0) do
+  begin
+    if SRL_Events[EVENT_ANTIBAN] <> nil then SRL_Events[EVENT_ANTIBAN]();
+    if current <> last then
+    begin
+      last := current;
+      timer.start();
+    end;
+  end;
+  playerManager.randomlyWait(3000, 5000);
+end;
+
+function BurnTask(data: string): ^TBurnTask;
+var task: ^TBurnTask;
+begin
+  new(task);
+  task^.init('Burn', data, task^.__burn);
+  exit(task);
+end;

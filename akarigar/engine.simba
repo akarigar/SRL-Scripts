@@ -161,10 +161,19 @@ begin
   if not playerForm.isScriptReady then exit(false);
 
   self.__declarePlayers();
+  {IFNDEF DEBUG}
+  disableSRLLog := true;
+  disableSRLDebug := true;
+  {$ENDIF}
   {$IFDEF SMART_DEBUG}
   smartEnableDrawing := true;
+  {$ELSE}
+  smartShowConsole := false;
   {$ENDIF}
   if not setupSRL() then exit(false);
+  {$IFDEF SMART_DEBUG}
+  smartImage.clear();
+  {$ENDIF}
 
   addOnTerminate('destroyEngine');
   self.__runLoop();

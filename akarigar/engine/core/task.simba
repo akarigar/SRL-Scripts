@@ -7,6 +7,7 @@
 }
 
 const FAIL_MAX = 20;
+const __NO_DTM__ = -1;
 
 type TTaskStatus = (
   ERR,
@@ -55,7 +56,10 @@ begin
 
   // Make the DTMs
   for i := 0 to high(self.recipe.itemsOut) do
-    self.recipe.itemsOut[i].dtm := dtmFromString(self.recipe.itemsOut[i].dtmString);
+    if length(self.recipe.itemsOut[i].dtmString) = 0 then
+      self.recipe.itemsOut[i].dtm := __NO_DTM__
+    else
+      self.recipe.itemsOut[i].dtm := dtmFromString(self.recipe.itemsOut[i].dtmString);
 end;
 
 function TTask.itemsGained(): integer;
@@ -75,6 +79,8 @@ begin
   // Update resources based on what has been produced
   for i := 0 to high(self.recipe.itemsOut) do
   begin
+    if self.recipe.itemsOut[i].dtm = __NO_DTM__ then continue;
+
     count := tabBackpack.countDtm(self.recipe.itemsOut[i].dtm);
     inc(self.recipe.itemsOut[i].count, count);
     resourceManager.updateResource(self.recipe.itemsOut[i].name, count);

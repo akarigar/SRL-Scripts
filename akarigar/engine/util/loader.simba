@@ -1,6 +1,8 @@
 {$include_once ../core/activity.simba}
 {$include_once ../../tasks/TBankTask.simba}
+{$include_once ../../tasks/TBurnTask.simba}
 {$include_once ../../tasks/TCookTask.simba}
+{$include_once ../../tasks/TCutTask.simba}
 {$include_once ../../tasks/TFishTask.simba}
 {$f-}
 
@@ -8,7 +10,9 @@ function Task(name, data: string): PTask;
 begin
   case name of
     'Bank': exit(BankTask(data));
+    'Burn': exit(BurnTask(data));
     'Cook': exit(CookTask(data));
+    'Cut': exit(CutTask(data));
     'Fish': exit(FishTask(data));
     else exit(nil);
   end;
