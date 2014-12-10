@@ -4,8 +4,8 @@ type TActivity = record
   id, quota: integer;
   name: string;
   recipe: TRecipe;
+  setupTask: PTask;
   tasks: TTaskList;
-  setup: function(): boolean of object;
 end;
 
 type PActivity = ^TActivity;
@@ -18,7 +18,9 @@ end;
 procedure TActivity.clear();
 begin
   self.tasks.clear();
-  self.setup := nil;
+  if self.setupTask = nil then exit;
+  dispose(self.setupTask);
+  self.setupTask := nil;
 end;
 
 function TActivity.isDone(): boolean;

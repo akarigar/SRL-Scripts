@@ -6,8 +6,10 @@
 {$include_once ../../tasks/TFishTask.simba}
 {$f-}
 
-function Task(name, data: string): PTask;
+function Task(data: string): PTask;
+var name: string;
 begin
+  name := between('name="', '"', data);
   case name of
     'Bank': exit(BankTask(data));
     'Burn': exit(BurnTask(data));
@@ -32,10 +34,14 @@ begin
   if pos('<quota>', xml) > 0 then
     self.quota := strToInt(between('<quota>', '</quota>', xml));
 
+  // Process setup task
+  if pos('<setup ', xml) > 0 then
+    self.setupTask := Task(between('<setup ', '</setup>', xml));
+
   // Process task data
   taskData := multiBetween(xml, '<task ', '</task>');
   for i := 0 to high(taskData) do
-    self.appendTask(Task(between('name="', '"', taskData[i]), taskData[i]));
+    self.appendTask(Task(taskData[i]));
 end;
 
 function Activity(xml: string): PActivity;

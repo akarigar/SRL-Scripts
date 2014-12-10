@@ -45,6 +45,7 @@ begin
   logger.info('Decided to run activity "%s."', [self.__currentActivity^.name]);
   self.__activityTimer.reset();
   self.__activityTimer.start();
+  self.setupActivity();
   exit(self.__currentActivity);
 end;
 
@@ -79,9 +80,7 @@ end;
 
 { Runs the current activity once. }
 function TActivityManager.run(): boolean;
-var
-  i: integer;
-  task: PTask;
+var i: integer;
 begin
   if (self.__currentActivity = nil) or (self.__currentActivity^.tasks.size() = 0) then
     exit(false);
@@ -92,22 +91,18 @@ begin
 
   for i := 0 to high(self.__currentActivity^.tasks) do
   begin
-    task := self.__currentActivity^.tasks[i];
-    logger.info('Starting %s task.', [task^.name]);
-    wait(gaussRangeInt(0, 1200));
-
-    logger.info('Running to %s.', [task^.name]);
-    if not playerManager.walkPath(task^.pathToObject, task^.location) then exit(false);
-    logger.info('Started to %s.', [task^.name]);
-    self.__previousStatus := task^.run();
-    logger.info(
-      'Finished %s task with status %s.',
-      [task^.name, toStr(self.__previousStatus)]
-    );
-
     if self.__previousStatus <= TTaskStatus.ERR then exit(false);
+    self.__runTask(self.__currentActivity^.tasks[i]);
   end;
-  exit(true);
+  exit(self.__previousStatus > TTaskStatus.ERR);
+end;
+
+function TActivityManager.setupActivity(): boolean;
+begin
+  if self.__currentActivity = nil then exit(false);
+  if self.__currentActivity^.setupTask = nil then exit(true);
+  self.__runTask(self.__currentActivity^.setupTask);
+  exit(self.__previousStatus > TTaskStatus.ERR);
 end;
 
 function TActivityManager.timeRan(): LongWord;
@@ -129,6 +124,25 @@ begin
     [rfReplaceAll]
   );
   if playerManager.isMember() then result += '&member=1';
+end;
+
+procedure TActivityManager.__runTask(task: PTask);
+begin
+  logger.info('Starting %s task.', [task^.name]);
+  wait(gaussRangeInt(0, 1200));
+
+  logger.info('Running to %s.', [task^.name]);
+  if not playerManager.walkPath(task^.pathToObject, task^.location) then
+  begin
+    self.__previousStatus := TTaskStatus.ERR;
+    exit;
+  end;
+  logger.info('Started to %s.', [task^.name]);
+  self.__previousStatus := task^.run();
+  logger.info(
+    'Finished %s task with status %s.',
+    [task^.name, toStr(self.__previousStatus)]
+  );
 end;
 
 {$f+}
