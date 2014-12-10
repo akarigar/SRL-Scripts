@@ -9,7 +9,7 @@
 
 {$include_once SPS/lib/sps-rs3.simba}
 
-
+{$include_once engine/util/logger.simba}
 {$include_once engine/util/util.simba}
 
 {$include_once engine/core/objectsettings.simba}
@@ -128,9 +128,9 @@ begin
         inc(integers[P_LOOP_COUNT]);
       end;
     end;
-    writeLn('isDone? ', self.__activityManager.isActivityDone());
-    writeln('isActive? ', playerManager.isActive());
-    writeln('isBreakTime? ', playerManager.isBreakTime());
+    logger.debug('isDone: %s', [boolToStr(self.__activityManager.isActivityDone())]);
+    logger.debug('isActive: %s', [boolToStr(playerManager.isActive())]);
+    logger.debug('isBreakTime: %s', [boolToStr(playerManager.isBreakTime())]);
     inc(players[currentPlayer].integers[P_TIME_RAN], self.__activityManager.timeRan());
 
     if not players[currentPlayer].isActive then
@@ -157,18 +157,16 @@ begin
 
   self.__declarePlayers();
   {$IFNDEF DEBUG}
-  disableSRLLog := true;
   disableSRLDebug := true;
   {$ENDIF}
   {$IFDEF SMART}
-  smartShowConsole := false;
-  {$ENDIF}
-  {$IFDEF SMART_DEBUG}
   smartEnableDrawing := true;
+  smartShowConsole := false;
   {$ENDIF}
   if not setupSRL() then exit(false);
   {$IFDEF SMART_DEBUG}
   smartImage.clear();
+  logger.info('Starting up engine.');
   {$ENDIF}
 
   addOnTerminate('destroyEngine');

@@ -77,7 +77,7 @@ begin
   if length(keyData) = 0 then exit;
   keys := explode(',', keyData);
   for i := 0 to high(keys) do
-    self.__resources.put(keys[i], strToInt(self.__read(keys[i])));
+    self.__resources.put(keys[i], variant(strToInt(self.__read(keys[i]))));
 end;
 
 function TResourceManager.__read(key: string): string;

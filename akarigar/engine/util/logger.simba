@@ -1,0 +1,74 @@
+{$f-}
+
+type TLogStatus = (
+  DEBUG,
+  INFO,
+  ERROR
+);
+
+type TLogger = record
+  level: TLogStatus;
+end;
+
+var logger: Tlogger = [
+{$IFDEF DEBUG}
+  TLogStatus.DEBUG
+{$ELSE}
+  TLogStatus.INFO
+{$ENDIF}
+];
+
+procedure TLogger.clear();
+begin
+  {$IFDEF SMART}
+  smartImage.clearArea(IntToBox(0, 0, smartImage.getWidth() - 1, 20));
+  {$ENDIF}
+end;
+
+procedure TLogger.debug(txt: string; args: TVariantArray = []);
+begin
+  self.log(TLogStatus.DEBUG, txt, args);
+end;
+
+procedure TLogger.info(txt: string; args: TVariantArray = []);
+begin
+  self.log(TLogStatus.INFO, txt, args);
+end;
+
+procedure TLogger.err(txt: string; args: TVariantArray = []);
+begin
+  self.log(TLogStatus.ERROR, txt, args);
+end;
+
+procedure TLogger.log(status: TLogStatus; txt: string; args: TVariantArray = []);
+begin
+  txt := format(txt, args);
+  if status > TLogStatus.DEBUG then self.__smartLog(status, txt);
+  txt := '[' + self.__now() + '] ' + padL(toStr(status), 5) + ' -> ' + txt;
+  if status < self.level then print(txt)
+  else writeLn(txt);
+end
+
+function TLogger.__now(): string;
+var
+  i: integer;
+  t: array[0..3] of uint16;
+begin
+  decodeTime(now(), t[0], t[1], t[2], t[3]);
+  for i := 0 to high(t) do
+    if i = high(t) then
+      result += padZ(intToStr(t[i]), 3)
+    else
+      result += padZ(intToStr(t[i]), 2) + ':';
+end;
+
+procedure TLogger.__smartLog(status: TLogStatus; txt: string);
+begin
+  {$IFDEF SMART}
+  self.clear();
+  if status = TLogStatus.ERROR then
+    smartImage.drawText(txt, Point(0, 0), loginChars, true, clRed)
+  else
+    smartImage.drawText(txt, Point(0, 0), loginChars, true, clWhite);
+  {$ENDIF}
+end;

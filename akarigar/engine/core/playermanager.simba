@@ -156,7 +156,7 @@ begin
     timeRemaining := time := getGaussRangePercentage(
       players[currentPlayer].integers[P_BREAK_LENGTH]
     );
-    writeLn('Taking a break for ', msToTime(timeRemaining, TIME_SHORT));
+    logger.info('Taking a break for %s.', [msToTime(timeRemaining, TIME_SHORT)]);
 
     if isLoggedIn() then
       if Random() > 0.8 then logout()
@@ -165,7 +165,7 @@ begin
     timer.start();
     while (timeRemaining := time - timer.getTime()) > 60000 do
     begin
-      writeLn('Break finishes in ', msToTime(timeRemaining, TIME_SHORT));
+      logger.info('Break finishes in %s.', [msToTime(timeRemaining, TIME_SHORT)]);
       wait(60000);
     end;
     if timeRemaining > 0 then
@@ -174,14 +174,16 @@ begin
     inc(integers[P_TIME_BREAKED], timer.getTime());
     inc(integers[P_BREAK_COUNT]);
     self.setupBreak();
-    writeLn('Break finished. Resuming script');
+    logger.info('Break finished. Resuming script.');
   end;
 end;
 
 function TPlayerManager.useObject(obj: PObjectSettings): boolean;
 var bounds: TBox;
 begin
+  logger.info('Looking for object.');
   if not findObject(obj, bounds) then exit(false);
+  logger.info('Found object. Now using object.');
   if length(obj^.optionText) = 0 then
   begin
     wait(100 + random(250));
@@ -201,15 +203,11 @@ begin
   timer.start();
   while (count := getPixelShiftAverage(mainscreen.playerBox, 100, 1000)) >= minShift do
   begin
-    {$IFDEF DEBUG}
-    writeln('Waiting while working, shift = ', count);
-    {$ENDIF}
+    logger.debug('Waiting while working, shift = %d', [count]);
     result := true;
     if SRL_Events[EVENT_ANTIBAN] <> nil then SRL_Events[EVENT_ANTIBAN]();
   end;
-  {$IFDEF DEBUG}
-  writeln('Stopped working, shift = ', count);
-  {$ENDIF}
+  logger.debug('Stopped working, shift = %d', [count]);
 end;
 
 function TPlayerManager.walkPath(path: TPointArray; location: integer): boolean;
