@@ -9,7 +9,7 @@ var
 begin
   len := length(self.objectLocations);
   timer.start();
-  while (playerManager.isActive()) and (timer.getTime() < 30000) and (not tabBackpack.isFull()) do
+  while (playerManager.isActive()) and (timer.getTime() < 60000) and (not tabBackpack.isFull()) do
   begin
     if playerManager.randomlyWait() and (not playerManager.useObject(self.objectSettings)) then
     begin
@@ -20,8 +20,8 @@ begin
 
     if playerManager.waitWhileWorking() then
     begin
-      if random() > 0.2 then
-        playerManager.walkTo(self.objectLocations[inc(i) mod len], self.location);
+      if distance(playerManager.getPos(), self.objectLocations[i mod len]) > self.flag then
+        playerManager.walkTo(self.objectLocations[i mod len], self.location);
       timer.start();
     end;
   end;

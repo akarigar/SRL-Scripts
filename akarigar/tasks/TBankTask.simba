@@ -45,6 +45,7 @@ begin
 
   case task^.location of
     LOCATION_AL_KHARID: task^.bankType := BANK_NPC_GREEN;
+    LOCATION_EDGEVILLE: task^.bankType := BANK_NPC_BLUE;
     LOCATION_LUMBRIDGE: task^.bankType := BANK_CHEST_LUMBRIDGE;
     else task^.bankType := BANK_BOOTH;
   end;

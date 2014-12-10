@@ -85,15 +85,23 @@ begin
   for i := 0 to high(atpa) do
   begin
     b := atpa[i].getBounds();
+    self.randomlyWait();
     mouse(atpa[i][random(length(atpa[i]))]);
-    if self.randomlyWait() and isMouseOverText(obj^.overText) then
+    if isMouseOverText(obj^.overText) then
     begin
       if length(obj^.optionText) = 0 then exit(true);
+      wait(50 + random(100));
       fastClick(MOUSE_RIGHT);
       if chooseOption.optionsExist(obj^.optionText) then exit(true);
     end;
   end;
   exit(false);
+end;
+
+function TPlayerManager.getPos(): TPoint;
+begin
+  if self.area = nil then exit(Point(-1, -1));
+  exit(self.area^.getPlayerPos());
 end;
 
 function TPlayerManager.getSkills(): string;
@@ -184,9 +192,9 @@ begin
   logger.info('Looking for object.');
   if not findObject(obj, bounds) then exit(false);
   logger.info('Found object. Now using object.');
+  wait(50 + random(100));
   if length(obj^.optionText) = 0 then
   begin
-    wait(100 + random(250));
     fastClick(MOUSE_LEFT);
     exit(self.randomlyWait() and minimap.waitPlayerMoving());
   end;
@@ -227,7 +235,7 @@ var
   path: TPointArray;
 begin
   if not self.__ensureCorrectLocation(location) then exit(false);
-  p := self.area^.getPlayerPos();
+  p := self.getPos();
   if (p.x = -1) or (p.y = -1) or (dest.x = -1) or (dest.y = -1) then exit(true);
   dx := dy := 20;
   if p.x > dest.x then dx *= -1;
