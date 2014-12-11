@@ -45,7 +45,7 @@ end;
 
 procedure TEngine.__declarePlayers();
 var
-  i: integer;
+  i, j: integer;
 begin
   players.setup(playerForm.players);
 
@@ -55,14 +55,11 @@ begin
   for i := 0 to high(players) do
     with playerForm.players[i] do
     begin
-      players[i].world := strToInt(settings[high(playerForm.editBoxLabels) - 2]);
-      players[i].integers[P_PLAY_TIME] := strToInt(settings[high(playerForm.editBoxLabels) - 1]) * 60000;
-      players[i].integers[P_BREAK_LENGTH] := strToInt(settings[high(playerForm.editBoxLabels)]) * 60000;
-      players[i].booleans[P_TAKE_BREAKS] := strToBool(settings[high(settings)]);
-
-      // Set up the time for the next break, if we are taking breaks.
-      if players[i].booleans[P_TAKE_BREAKS] then
-        players[i].integers[P_NEXT_BREAK] := getGaussRangePercentage(players[i].integers[P_PLAY_TIME], 0.2);
+      j := high(playerForm.editBoxLabels) - 3;
+      players[i].world := strToInt(settings[j]);
+      players[i].integers[P_PLAY_TIME] := strToInt(settings[inc(j)]) * 60000;
+      players[i].integers[P_BREAK_LENGTH] := strToInt(settings[inc(j)]) * 60000;
+      players[i].integers[P_SESSION_TIME] := strToInt(settings[inc(j)]) * 60000;
     end;
 end;
 
@@ -79,24 +76,26 @@ begin
     if length(name) = 0 then
       name := 'All In One Runescape';
 
-    editBoxLabels.combine(['World', 'Take a break around (mins)', 'Duration of break (mins)']);
-    editBoxDefaults.combine(['-1', '60', '5']);
+    editBoxLabels.combine([
+      'World',
+      'Take a break every (mins)',
+      'Duration of break (mins)',
+      'Switch players after (mins)'
+    ]);
+    editBoxDefaults.combine(['-1', '60', '5', '120']);
     editBoxHints.combine([
       'What world to use? (-1 means use current, 0 means use random)',
-      'Around how long to run before taking a break?',
-      'Around how long should the break be?'
+      'Approximately how long to play before taking a break? (0 for no breaks)',
+      'Approximately how long should every break be?',
+      'Approximately how long to play before switching players? (0 to never switch players)'
     ]);
-
-    checkBoxLabels.combine(['Take Breaks']);
-    checkBoxDefaults.combine(['True']);
-    checkBoxHints.combine(['Should I take breaks?']);
   end;
 end;
 
 procedure TEngine.__notifyNewPlayer();
 begin
   self.__activityManager.destroy();
-  playerManager.setupBreak();
+  playerManager.setup();
   resourceManager.setup(players[currentPlayer].nickname);
 end;
 
@@ -120,23 +119,22 @@ begin
       if self.__activityManager.isActivityDone() then
         isActive := self.__activityManager.next() <> nil;
 
-      while playerManager.isActive() and (not self.__activityManager.isActivityDone()) and
-            (not playerManager.isBreakTime()) do
+      while playerManager.isActive() and (not self.__activityManager.isActivityDone()) do
       begin
         self.__activityManager.printProgress();
         if not self.__activityManager.run() then break;
       end;
     end;
-    logger.debug('isDone: %s', [boolToStr(self.__activityManager.isActivityDone())]);
-    logger.debug('isActive: %s', [boolToStr(playerManager.isActive())]);
+    logger.debug('isActive: %s', [boolToStr(players[currentPlayer].isActive)]);
     logger.debug('isBreakTime: %s', [boolToStr(playerManager.isBreakTime())]);
+    logger.debug('isDone: %s', [boolToStr(self.__activityManager.isActivityDone())]);
+    logger.debug('isSessionOver: %s', [boolToStr(playerManager.isSessionOver())]);
 
-    if not players[currentPlayer].isActive then
+    if playerManager.isSessionOver() then
     begin
       players[currentPlayer].logout();
-      if players.getActive() > 0 then players.randomNext(false);
+      players.randomNext(players[currentPlayer].isActive);
       self.__notifyNewPlayer();
-      continue;
     end;
 
     if playerManager.isBreakTime() then
@@ -176,4 +174,3 @@ procedure destroyEngine();
 begin
   engine.__destroy();
 end;
-

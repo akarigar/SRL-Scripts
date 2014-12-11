@@ -6,15 +6,14 @@ const
   P_BREAK_LENGTH := P_BREAK_COUNT - 1;
   P_NEXT_BREAK := P_BREAK_LENGTH - 1;
   P_PLAY_TIME := P_NEXT_BREAK - 1;
-  P_TIME_BREAKED := P_PLAY_TIME - 1;
-
-  // Booleans
-  P_TAKE_BREAKS := 99;
+  P_SESSION_TIME := P_PLAY_TIME - 1;
+  P_TIME_BREAKED := P_SESSION_TIME - 1;
 
 type TPlayerManager = record
   area: ^TSPSArea;
   currentLocation: integer;
   __nextBreakTime: LongWord;
+  __sessionExpireTime: LongWord;
 end;
 
 var playerManager: TPlayerManager = [nil, -1, 0];
@@ -116,20 +115,30 @@ end;
 
 function TPlayerManager.isActive(): boolean;
 begin
-  exit(isLoggedIn() and players[currentPlayer].isActive);
+  exit(isLoggedIn() and (not self.isSessionOver()) and (not self.isBreakTime()));
 end;
 
 function TPlayerManager.isBreakTime(): boolean;
 begin
   exit(
-    (players[currentPlayer].booleans[P_TAKE_BREAKS]) and
-    (getSystemTime() > self.__nextBreakTime)
+    (players[currentPlayer].integers[P_PLAY_TIME] > 0) and
+    (getSystemTime() >= self.__nextBreakTime)
   );
 end;
 
 function TPlayerManager.isMember(): boolean;
 begin
   exit(players[currentPlayer].isMember);
+end;
+
+function TPlayerManager.isSessionOver(): boolean;
+begin
+  exit(
+    (not players[currentPlayer].isActive) or
+    ((players.getActive() > 0) and
+     (players[currentPlayer].integers[P_SESSION_TIME] > 0) and
+     (players[currentPlayer].worked.getTime() >= self.__sessionExpireTime))
+  );
 end;
 
 procedure TPlayerManager.loadArea(location: integer);
@@ -145,10 +154,16 @@ begin
   exit(true);
 end;
 
-procedure TPlayerManager.setupBreak();
+procedure TPlayerManager.setup(isNewPlayer: boolean = true);
 begin
-  self.__nextBreakTime :=
-    getSystemTime() + getGaussRangePercentage(players[currentPlayer].integers[P_PLAY_TIME], 0.2);
+  with players[currentPlayer] do
+  begin
+    self.__nextBreakTime :=
+      getSystemTime() + getGaussRangePercentage(integers[P_PLAY_TIME], 0.2);
+    if not isNewPlayer then exit;
+    self.__sessionExpireTime :=
+      worked.getTime() + getGaussRangePercentage(integers[P_SESSION_TIME], 0.25);
+  end;
 end;
 
 procedure TPlayerManager.takeBreak();
@@ -158,6 +173,8 @@ var
 begin
   with players[currentPlayer] do
   begin
+    if not isActive then exit;
+
     timeRemaining := time := getGaussRangePercentage(
       players[currentPlayer].integers[P_BREAK_LENGTH]
     );
@@ -179,7 +196,7 @@ begin
 
     inc(integers[P_TIME_BREAKED], timer.getTime());
     inc(integers[P_BREAK_COUNT]);
-    self.setupBreak();
+    self.setup(false);
     logger.info('Break finished. Resuming script.');
   end;
 end;
@@ -234,6 +251,7 @@ var
 begin
   if not self.__ensureCorrectLocation(location) then exit(false);
   p := self.getPos();
+  logger.debug('WalkTo: %s', [toStr(dest)]);
   if (p.x = -1) or (p.y = -1) or (dest.x = -1) or (dest.y = -1) then exit(true);
   dx := dy := 20;
   if p.x > dest.x then dx *= -1;
