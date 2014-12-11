@@ -81,7 +81,7 @@ begin
   for i := 0 to high(atpa) do
   begin
     b := atpa[i].getBounds();
-    self.randomlyWait();
+    randomlyWait();
     mouse(atpa[i][random(length(atpa[i]))]);
     if isMouseOverText(obj^.overText) then
     begin
@@ -148,12 +148,6 @@ begin
   self.area^.setup('LOCATION_' + intToStr(location), RUNESCAPE_OTHER);
 end;
 
-function TPlayerManager.randomlyWait(min: integer = 250; max: integer = 750): boolean;
-begin
-  wait(gaussRangeInt(min, max));
-  exit(true);
-end;
-
 procedure TPlayerManager.setup(isNewPlayer: boolean = true);
 begin
   with players[currentPlayer] do
@@ -211,9 +205,9 @@ begin
   if length(obj^.optionText) = 0 then
   begin
     fastClick(MOUSE_LEFT);
-    exit(self.randomlyWait() and minimap.waitPlayerMoving());
+    exit(randomlyWait() and minimap.waitPlayerMoving());
   end;
-  exit(self.randomlyWait() and chooseOption.select(obj^.optionText) and minimap.waitPlayerMoving());
+  exit(randomlyWait() and chooseOption.select(obj^.optionText) and minimap.waitPlayerMoving());
 end;
 
 function TPlayerManager.waitWhileWorking(minShift: integer = 200): boolean;
@@ -277,5 +271,5 @@ begin
   if self.currentLocation = location then exit(true);
   currentLocation := location;
   self.loadArea(location);
-  exit(lodestoneScreen.teleportTo(location) and self.randomlyWait(15000, 17000));
+  exit(lodestoneScreen.teleportTo(location) and randomlyWait(15000, 17000));
 end;

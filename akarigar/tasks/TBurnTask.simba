@@ -28,12 +28,12 @@ begin
             (not chatBox.findText(['fire catches and', 'begins to burn'])) do
         wait(100 + random(50));
       unlit := timer.getTime() > 10000;
-      playerManager.randomlyWait();
+      randomlyWait();
     end;
     if unlit then continue;
 
     if not (tabBackpack.clickDtm(dtm, MOUSE_LEFT, '', 0, false) and
-       playerManager.randomlyWait() and toolScreen.isOpen(1000)) then continue;
+       randomlyWait() and toolScreen.isOpen(1000)) then continue;
 
     if not toolScreen.select('bonfire') then
       continue;
@@ -62,7 +62,7 @@ begin
       timer.start();
     end;
   end;
-  playerManager.randomlyWait(3000, 5000);
+  randomlyWait(3000, 5000);
 end;
 
 function BurnTask(data: string): ^TBurnTask;

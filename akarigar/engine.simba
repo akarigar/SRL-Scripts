@@ -105,7 +105,7 @@ begin
   self.__notifyNewPlayer();
   while players.getActive() > 0 do
   begin
-    if players[currentPlayer].login() and playerManager.randomlyWait(500, 1500) then
+    if players[currentPlayer].login() and randomlyWait(500, 1500) then
     begin
       closeAdWindow();
       closePollWindow();

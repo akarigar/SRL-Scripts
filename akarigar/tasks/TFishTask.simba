@@ -76,7 +76,7 @@ begin
         timer.start();
       end;
     if SRL_Events[EVENT_ANTIBAN] <> nil then SRL_Events[EVENT_ANTIBAN]()
-    else playerManager.randomlyWait(750, 1250);
+    else randomlyWait(750, 1250);
   end;
   exit(true);
 end;
@@ -91,7 +91,7 @@ begin
   timer.start();
   while (timer.getTime() < 30000) and (self.__hasGear()) and (not tabBackpack.isFull()) do
   begin
-    if playerManager.randomlyWait() and self.__goFish() then
+    if randomlyWait() and self.__goFish() then
     begin
       timer.reset();
       timer.start();

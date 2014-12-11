@@ -12,7 +12,7 @@ begin
 
   if not playerManager.useObject(self.objectSettings) then exit(TTaskStatus.ERR);
 
-  while (playerManager.randomlyWait(1000, 1500)) and
+  while (randomlyWait(1000, 1500)) and
         (not productionScreen.clickStart()) and
         (inc(i) < self.tries) do;
   if (i >= self.tries) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 1300000)))

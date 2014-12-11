@@ -15,7 +15,7 @@ begin
     self.tries // tries
   ) then exit(TTaskStatus.ERR);
 
-  while (playerManager.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
+  while (randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
   if (i >= self.tries) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 130000))) then
     exit(TTaskStatus.ERR);
 

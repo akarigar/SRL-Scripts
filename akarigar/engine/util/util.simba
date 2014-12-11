@@ -33,6 +33,12 @@ begin
   exit(format('%s: %d (%d/hr)', [prefix, value, getHourlyRate(value, totalTime)]));
 end;
 
+function randomlyWait(min: integer = 250; max: integer = 750): boolean;
+begin
+  wait(gaussRangeInt(min, max));
+  exit(true);
+end;
+
 function strToPoint(str: string): TPoint;
 var data: TStringArray;
 begin

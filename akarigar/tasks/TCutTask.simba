@@ -11,7 +11,7 @@ begin
   timer.start();
   while (playerManager.isActive()) and (timer.getTime() < 60000) and (not tabBackpack.isFull()) do
   begin
-    if playerManager.randomlyWait() and (not playerManager.useObject(self.objectSettings)) then
+    if randomlyWait() and (not playerManager.useObject(self.objectSettings)) then
     begin
       playerManager.walkTo(self.objectLocations[inc(i) mod len], self.location);
       continue;

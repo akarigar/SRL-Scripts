@@ -28,12 +28,12 @@ begin
     self.tries // tries
   ) then exit(TTaskStatus.ERR);
 
-  while (playerManager.randomlyWait(500, 1000)) and (inc(i) <= self.tries) and
+  while (randomlyWait(500, 1000)) and (inc(i) <= self.tries) and
         (not productionScreen.selectBox(self.slot, [self.itemText])) do;
   if (i >= self.tries) then exit(TTaskStatus.ERR);
   i := 0;
 
-  while (playerManager.randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
+  while (randomlyWait()) and (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
   if i >= self.tries then exit(TTaskStatus.ERR);
   i := 0;
 
