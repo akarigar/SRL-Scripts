@@ -4,15 +4,12 @@ const
   // Integers
   P_BREAK_COUNT := 99;
   P_BREAK_LENGTH := P_BREAK_COUNT - 1;
-  P_LOOP_COUNT := P_BREAK_LENGTH - 1;
-  P_NEXT_BREAK := P_LOOP_COUNT - 1;
+  P_NEXT_BREAK := P_BREAK_LENGTH - 1;
   P_PLAY_TIME := P_NEXT_BREAK - 1;
   P_TIME_BREAKED := P_PLAY_TIME - 1;
-  P_TIME_RAN := P_TIME_BREAKED - 1;
 
   // Booleans
   P_TAKE_BREAKS := 99;
-
 
 type TPlayerManager = record
   area: ^TSPSArea;
@@ -166,6 +163,7 @@ begin
     );
     logger.info('Taking a break for %s.', [msToTime(timeRemaining, TIME_SHORT)]);
 
+    worked.pause();
     if isLoggedIn() then
       if Random() > 0.8 then logout()
       else exitToLobby();

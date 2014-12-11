@@ -125,13 +125,11 @@ begin
       begin
         self.__activityManager.printProgress();
         if not self.__activityManager.run() then break;
-        inc(integers[P_LOOP_COUNT]);
       end;
     end;
     logger.debug('isDone: %s', [boolToStr(self.__activityManager.isActivityDone())]);
     logger.debug('isActive: %s', [boolToStr(playerManager.isActive())]);
     logger.debug('isBreakTime: %s', [boolToStr(playerManager.isBreakTime())]);
-    inc(players[currentPlayer].integers[P_TIME_RAN], self.__activityManager.timeRan());
 
     if not players[currentPlayer].isActive then
     begin
@@ -164,10 +162,10 @@ begin
   smartShowConsole := false;
   {$ENDIF}
   if not setupSRL() then exit(false);
-  {$IFDEF SMART_DEBUG}
+  {$IFDEF SMART}
   smartImage.clear();
-  logger.info('Starting up engine.');
   {$ENDIF}
+  logger.info('Starting up engine.');
 
   addOnTerminate('destroyEngine');
   self.__runLoop();

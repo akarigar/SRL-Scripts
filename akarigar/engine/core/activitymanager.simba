@@ -7,6 +7,7 @@ const __URL__ = 'http://akarigar.com/srl/activity/%d/next/?items=%s&skills=%s';
 type TActivityManager = record
   __activityTimer: TTimeMarker;
   __currentActivity: PActivity;
+  __loadCount: integer;
   __previousStatus: TTaskStatus;
 end;
 
@@ -37,15 +38,15 @@ begin
   url := self.__getUrl();
   self.destroy();
   self.__currentActivity := Activity(getPage(url));
+
   if self.__currentActivity = nil then
   begin
     logger.err('Couldn''t figure out what to do.');
     exit(nil);
   end;
+
   logger.info('Decided to run activity "%s."', [self.__currentActivity^.name]);
-  self.__activityTimer.reset();
-  self.__activityTimer.start();
-  self.setupActivity();
+  self.__setupActivity();
   exit(self.__currentActivity);
 end;
 
@@ -63,13 +64,15 @@ begin
   with players[currentPlayer] do
   begin
     writeLn('================================================================');
-    writeLn(self.__currentActivity^.name, ' Progress Report');
     writeLn('Player[', currentPlayer, ']: ', nickname);
-    writeLn('Played for ', msToTime(self.timeRan(), TIME_FORMAL));
+    writeln('Played for ', msToTime(worked.getTime(), TIME_FORMAL));
     writeLn('Breaked for ', msToTime(integers[P_TIME_BREAKED], TIME_FORMAL),' (',
             integers[P_BREAK_COUNT], ' breaks)');
+    writeLn('++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++');
+    writeLn('Current Activity: ', self.__currentActivity^.name);
+    writeLn('Activity ran for ', msToTime(self.timeRan(), TIME_FORMAL));
+    writeLn(formatProgressLine('Loads done', self.__loadCount, self.timeRan()));
 
-    writeLn('Activity looped ', integers[P_LOOP_COUNT], ' times');
     for i := 0 to high(self.__currentActivity^.tasks) do
       totalXp += self.__currentActivity^.tasks[i]^.reportProgress(self.timeRan());
 
@@ -88,20 +91,13 @@ begin
   // Start timer if paused
   if self.__activityTimer.paused then
     self.__activityTimer.start();
+  inc(self.__loadCount);
 
   for i := 0 to high(self.__currentActivity^.tasks) do
   begin
     if self.__previousStatus <= TTaskStatus.ERR then exit(false);
     self.__runTask(self.__currentActivity^.tasks[i]);
   end;
-  exit(self.__previousStatus > TTaskStatus.ERR);
-end;
-
-function TActivityManager.setupActivity(): boolean;
-begin
-  if self.__currentActivity = nil then exit(false);
-  if self.__currentActivity^.setupTask = nil then exit(true);
-  self.__runTask(self.__currentActivity^.setupTask);
   exit(self.__previousStatus > TTaskStatus.ERR);
 end;
 
@@ -143,6 +139,19 @@ begin
     'Finished %s task with status %s.',
     [task^.name, toStr(self.__previousStatus)]
   );
+end;
+
+function TActivityManager.__setupActivity(): boolean;
+begin
+  if self.__currentActivity = nil then exit(false);
+
+  self.__activityTimer.reset();
+  self.__activityTimer.start();
+  self.__loadCount := 0;
+
+  if self.__currentActivity^.setupTask = nil then exit(true);
+  self.__runTask(self.__currentActivity^.setupTask);
+  exit(self.__previousStatus > TTaskStatus.ERR);
 end;
 
 {$f+}
