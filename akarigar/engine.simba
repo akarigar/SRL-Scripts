@@ -69,6 +69,33 @@ begin
   resourceManager.clear();
 end;
 
+procedure TEngine.__doAntiBan();
+begin
+  randomlyWait(500, 1000);
+  if minimap.isPlayerMoving() or (not isMouseOnClient()) then
+  begin
+    randomlyWait(1000, 2000);
+    exit;
+  end;
+
+  case random(100) of
+    1..5:
+      if self.__activityManager.getRelatedSkill() = SKILL_NONE then
+        hoverRandomSkill()
+      else
+        hoverSkill(self.__activityManager.getRelatedSkill());
+    6..15: sleepAndMoveMouse(randomRange(200, 1000));
+    16..25:
+    begin
+      if random() > 0.5 then pickupMouse();
+      smallRandomMouse(gaussRangeInt(400, 1200));
+    end;
+    26..50: mouseOffClient(OFF_CLIENT_RANDOM);
+  end;
+
+  randomlyWait(1000, 2000);
+end;
+
 procedure TEngine.__initPlayerForm();
 begin
   with playerForm do
@@ -145,8 +172,14 @@ begin
   end;
 end;
 
+procedure defaultAntiBan();
+begin
+  engine.__doAntiBan();
+end;
+
 function TEngine.run(): boolean;
 begin
+  clearDebug();
   self.__initPlayerForm();
   runPlayerForm();
   if not playerForm.isScriptReady then exit(false);
@@ -164,6 +197,9 @@ begin
   smartImage.clear();
   {$ENDIF}
   logger.info('Starting up engine.');
+
+  if SRL_Events[EVENT_ANTIBAN] = nil then
+    self.setAntiBan(defaultAntiBan);
 
   addOnTerminate('destroyEngine');
   self.__runLoop();

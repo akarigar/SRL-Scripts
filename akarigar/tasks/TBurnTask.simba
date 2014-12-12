@@ -70,5 +70,6 @@ var task: ^TBurnTask;
 begin
   new(task);
   task^.init('Burn', data, task^.__burn);
+  task^.skill := SKILL_FIREMAKING;
   exit(task);
 end;

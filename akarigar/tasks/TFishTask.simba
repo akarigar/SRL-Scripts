@@ -107,6 +107,7 @@ var task: ^TFishTask;
 begin
   new(task);
   task^.init('Fish', data, task^.__fish);
+  task^.skill := SKILL_FISHING;
   exit(task);
 end;
 

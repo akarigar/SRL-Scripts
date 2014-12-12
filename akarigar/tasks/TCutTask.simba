@@ -35,5 +35,6 @@ var task: ^TCutTask;
 begin
   new(task);
   task^.init('Cut', data, task^.__cut);
+  task^.skill := SKILL_WOODCUTTING;
   exit(task);
 end;

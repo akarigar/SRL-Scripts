@@ -30,6 +30,7 @@ var task: ^TCookTask;
 begin
   new(task);
   task^.init('Cook', data, task^.__cook);
+  task^.skill := SKILL_COOKING;
   exit(task);
 end;
 

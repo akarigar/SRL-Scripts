@@ -16,7 +16,7 @@ type TTaskStatus = (
 
 type TTask = record
   name: string;
-  location, tries, flag, loopCount: integer;
+  location, tries, flag, loopCount, skill: integer;
   recipe: TRecipe;
   pathToObject, objectLocations: TPointArray;
   objectSettings: PObjectSettings;
@@ -53,6 +53,7 @@ begin
 
   self.tries := FAIL_MAX;
   self.loopCount := 0;
+  self.skill := SKILL_NONE;
 
   // Make the DTMs
   for i := 0 to high(self.recipe.itemsOut) do

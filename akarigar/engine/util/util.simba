@@ -16,6 +16,8 @@ const XP_AT_LEVEL = [ 0, // level 0
   70170840, 77474828, 85539082, 94442737, 104273167
 ];
 
+const SKILL_NONE = 1338;
+
 function getGaussRangePercentage(value: integer; percentage: extended = 0.1): integer;
 var delta: integer;
 begin
@@ -31,6 +33,14 @@ end;
 function formatProgressLine(prefix: string; value, totalTime: integer): string;
 begin
   exit(format('%s: %d (%d/hr)', [prefix, value, getHourlyRate(value, totalTime)]));
+end;
+
+function isMouseOnClient(): boolean;
+var w, h, x, y: integer;
+begin
+  getClientDimensions(w, h);
+  getMousePos(x, y);
+  exit((x >= 0) and (x <= w) and (y >= 0) and (y <= h));
 end;
 
 function randomlyWait(min: integer = 250; max: integer = 750): boolean;

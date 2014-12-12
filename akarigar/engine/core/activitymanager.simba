@@ -22,6 +22,16 @@ begin
   self.__currentActivity := nil;
 end;
 
+function TActivityManager.getRelatedSkill(): integer;
+var i: integer;
+begin
+  if self.__currentActivity = nil then exit(SKILL_NONE);
+  for i := high(self.__currentActivity^.tasks) downto 0 do
+    if self.__currentActivity^.tasks[i]^.skill <> SKILL_NONE then
+      exit(self.__currentActivity^.tasks[i]^.skill);
+  exit(SKILL_NONE);
+end;
+
 function TActivityManager.isActivityDone(): boolean;
 begin
   exit(
