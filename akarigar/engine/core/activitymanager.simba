@@ -45,6 +45,7 @@ function TActivityManager.next(): PActivity;
 var url: string;
 begin
   logger.info('Deciding what to do next.');
+  resourceManager.saveResources();
   url := self.__getUrl();
   self.destroy();
   self.__currentActivity := Activity(getPage(url));

@@ -1,20 +1,17 @@
 {$f-}
 
-type TBankTask = record(TTask)
-  bankType: integer;
-end;
-
-function TBankTask.__doTransaction(): boolean;
-begin
-  if self.flag <= BANK_BUTTON_NOTE then exit(bankScreen.clickButton(self.flag));
-  exit(bankScreen.quickDeposit(self.flag - BANK_BUTTON_NOTE - 1));
-end;
+type TBankTask = TTask;
 
 function TBankTask.__bank(): TTaskStatus;
 var i: integer;
 begin
+  if (length(self.recipe.itemsIn) = 0) and (tabBackpack.count() = 0) then
+    exit(TTaskStatus.DONE);
+  logger.debug('Length %d', [length(self.recipe.itemsIn)]);
+  logger.debug('count %d', [tabBackpack.count()]);
+
   while (randomlyWait()) and
-        (not bankScreen.open(self.bankType)) and
+        (not bankScreen.open(self.flag)) and
         (inc(i) < self.tries) do;
   if i >= self.tries then exit(TTaskStatus.ERR);
   i := 0;
@@ -37,19 +34,18 @@ begin
   exit(TTaskStatus.DONE);
 end;
 
+function TBankTask.__doTransaction(): boolean;
+begin
+  if (length(self.recipe.itemsIn) = 0) then
+    exit(bankScreen.quickDeposit(QUICK_DEPOSIT_INVENTORY));
+  exit(bankScreen.clickButton(BANK_BUTTON_PRESET_1));
+end;
+
 function BankTask(data: string): ^TBankTask;
 var task: ^TBankTask;
 begin
   new(task);
   task^.init('Bank', data, task^.__bank);
-
-  case task^.location of
-    LOCATION_AL_KHARID: task^.bankType := BANK_NPC_GREEN;
-    LOCATION_EDGEVILLE: task^.bankType := BANK_NPC_BLUE;
-    LOCATION_LUMBRIDGE: task^.bankType := BANK_CHEST_LUMBRIDGE;
-    else task^.bankType := BANK_BOOTH;
-  end;
-
   exit(task);
 end;
 

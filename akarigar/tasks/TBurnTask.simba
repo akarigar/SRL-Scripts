@@ -5,6 +5,7 @@ type TBurnTask = TTask;
 function TBurnTask.__burn(): TTaskStatus;
 var
   count, dtm: integer;
+  p: TPoint;
   timer: TTimeMarker;
   unlit: boolean = true;
 begin
@@ -16,18 +17,26 @@ begin
   count := tabBackpack.countDtm(dtm);
 
   timer.start();
-  while (timer.getTime() < 30000) and (tabBackpack.countDtm(dtm) > 0) do
+  while (timer.getTime() < self.flag * 2) and (tabBackpack.countDtm(dtm) > 0) do
   begin
     if unlit and tabBackpack.clickDtm(dtm, MOUSE_RIGHT, 'Light', 300, false) then
     begin
-      { TODO: Fix this later. We should move away to a random spot. }
-      if chatBox.findText(['light a fire here']) then exit(TTaskStatus.ERR);
+      // Try to move away if we can't light a fire here.
+      if chatBox.findText(['light a fire here']) then
+      begin
+        p := playerManager.getPos();
+        if (p.x = -1) or (p.y = -1) then exit(TTaskStatus.ERR);
+        inc(p.x, (random(3) - 1) * 15);
+        inc(p.y, (random(3) - 1) * 15);
+        if not playerManager.walkTo(p, self.location) then exit(TTaskStatus.ERR);
+        continue;
+      end;
 
       timer.start();
-      while (timer.getTime() <= 10000) and
+      while (timer.getTime() <= self.flag) and
             (not chatBox.findText(['fire catches and', 'begins to burn'])) do
         wait(100 + random(50));
-      unlit := timer.getTime() > 10000;
+      unlit := timer.getTime() > self.flag;
       randomlyWait();
     end;
     if unlit then continue;
@@ -53,7 +62,7 @@ var
   timer: TTimeMarker;
 begin
   timer.start();
-  while (timer.getTime() < 10000) and ((current := tabBackpack.countDtm(dtm)) > 0) do
+  while (timer.getTime() < self.flag) and ((current := tabBackpack.count()) > 0) do
   begin
     if SRL_Events[EVENT_ANTIBAN] <> nil then SRL_Events[EVENT_ANTIBAN]();
     if current <> last then

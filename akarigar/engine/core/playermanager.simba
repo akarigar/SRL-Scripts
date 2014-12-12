@@ -88,7 +88,8 @@ begin
       if length(obj^.optionText) = 0 then exit(true);
       wait(50 + random(100));
       fastClick(MOUSE_RIGHT);
-      if chooseOption.optionsExist(obj^.optionText) then exit(true);
+      if randomlyWait() and chooseOption.optionsExist(obj^.optionText) then exit(true);
+      chooseOption.close();
     end;
   end;
   exit(false);

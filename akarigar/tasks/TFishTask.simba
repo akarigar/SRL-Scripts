@@ -2,17 +2,6 @@
 
 type TFishTask = TTask;
 
-function TFishTask.__getRiverBounds(): TBox;
-var
-  x, y: integer;
-  riverPoints: TPointArray;
-  emptyBox: TBox;
-begin
-  if not findColorsSpiralTolerance(x, y, riverPoints, 12483174, mainscreen.getBounds(), 6, colorSetting(2, 0.15, 0.90)) then
-    exit(emptyBox);
-  exit(riverPoints.getBounds());
-end;
-
 function TFishTask.__isFishing(): boolean;
 var
   x, y: integer;
@@ -21,8 +10,16 @@ var
   timer: TTimeMarker;
 begin
   bounds := mainscreen.playerBox;
-  bounds.X1 += mainscreen.playerBox.getWidth();
-  bounds.X2 += mainscreen.playerBox.getWidth();
+  case self.flag of
+    0: y := -mainscreen.playerBox.getHeight();
+    1: x := mainscreen.playerBox.getWidth();
+    2: y := mainscreen.playerBox.getHeight();
+    3: x := -mainscreen.playerBox.getWidth();
+  end;
+  inc(bounds.x1, x);
+  inc(bounds.x2, x);
+  inc(bounds.y1, y);
+  inc(bounds.y2, y);
   timer.start();
   while timer.getTime() <= 1500 do
     if findColorsSpiralTolerance(
@@ -40,7 +37,10 @@ end;
 function TFishTask.__hasGear(): boolean;
 var x, y: integer;
 begin
-  exit((self.flag = 0) or (findColor(x, y, 65535, tabBackpack.getBounds())));
+  exit(
+    (length(self.recipe.itemsIn) = 0) or
+    (findColor(x, y, 65535, tabBackpack.getBounds()))
+  );
 end;
 
 { Walks through all the known spots twice to find & use an active spot. }
@@ -50,7 +50,8 @@ begin
   for i := 0 to length(self.objectLocations) * 2 - 1 do
     if playerManager.walkTo(
          self.objectLocations[i mod length(self.objectLocations)], self.location
-        ) and playerManager.useObject(self.objectSettings) then exit(true);
+       ) and
+       playerManager.useObject(self.objectSettings) then exit(true);
   exit(false);
 end;
 

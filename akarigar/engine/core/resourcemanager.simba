@@ -12,7 +12,7 @@ procedure TResourceManager.clear();
 begin
   if self.__resources.isEmpty() then exit;
 
-  self.__saveResources();
+  self.saveResources();
   self.__resources.clear();
 end;
 
@@ -20,6 +20,22 @@ procedure TResourceManager.removeResource(name: string);
 begin
   self.__resources.remove(name);
   deleteIni(self.__nickname, name, self.__filePath);
+end;
+
+procedure TResourceManager.saveResources();
+var
+  i: integer;
+  keyData: string;
+  keys: TVariantSet;
+begin
+  keys := self.__resources.keys();
+  for i := 0 to high(keys) do
+  begin
+    self.__write(keys[i], self.__resources.get(keys[i])^);
+    keyData += string(keys[i]);
+    if i < high(keys) then keyData += ',';
+  end;
+  self.__write('_keys', keyData);
 end;
 
 procedure TResourceManager.setup(nickname: string);
@@ -83,22 +99,6 @@ end;
 function TResourceManager.__read(key: string): string;
 begin
   exit(readIni(self.__nickname, key, self.__filePath));
-end;
-
-procedure TResourceManager.__saveResources();
-var
-  i: integer;
-  keyData: string;
-  keys: TVariantSet;
-begin
-  keys := self.__resources.keys();
-  for i := 0 to high(keys) do
-  begin
-    self.__write(keys[i], self.__resources.get(keys[i])^);
-    keyData += string(keys[i]);
-    if i < high(keys) then keyData += ',';
-  end;
-  self.__write('_keys', keyData);
 end;
 
 procedure TResourceManager.__write(key, value: string);
