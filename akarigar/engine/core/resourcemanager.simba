@@ -41,7 +41,7 @@ end;
 procedure TResourceManager.setup(nickname: string);
 begin
   self.clear();
-  self.__filePath := includePath + 'akarigar\resources.ini';
+  self.__filePath := appPath + 'Scripts\' + __SCRIPT_NAME + '\resources.ini';
   self.__nickname := nickname;
   self.__resources.init(20);
   self.__loadResources();

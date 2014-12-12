@@ -100,8 +100,8 @@ procedure TEngine.__initPlayerForm();
 begin
   with playerForm do
   begin
-    if length(name) = 0 then
-      name := 'All In One Runescape';
+    name := __SCRIPT_NAME;
+    scriptSettingsPath := 'akarigar';
 
     editBoxLabels.combine([
       'World',

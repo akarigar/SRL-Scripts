@@ -1,5 +1,7 @@
 {$f-}
 
+const __SCRIPT_NAME = 'All in One Runescape';
+
 type TLogStatus = (
   DEBUG,
   INFO,
@@ -47,6 +49,8 @@ begin
   txt := '[' + self.__now() + '] ' + padL(toStr(status), 5) + ' -> ' + txt;
   if status < self.level then print(txt)
   else writeLn(txt);
+
+  if status = TLogStatus.ERROR then takeScreenshot(__SCRIPT_NAME);
 end
 
 function TLogger.__now(): string;
