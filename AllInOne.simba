@@ -3,36 +3,7 @@ program AllInOne;
 
 {$i akarigar/engine.simba}
 
-{$ContinueCase ON}
-{$f-}
-
-procedure doAntiBan();
 begin
-  case random(600) of
-    1..10: sleepAndMoveMouse(randomRange(150, 1000));
-    11..20:
-    begin
-      if random() > 0.75 then hoverSkill(SKILL_SMITHING)
-      else hoverRandomSkill();
-      continue;
-    end;
-    21..35:
-    begin
-      if random() > 0.5 then pickupMouse();
-      smallRandomMouse(gaussRangeInt(400, 1200));
-      wait(randomRange(500, 1000));
-    end;
-    36..150: if not minimap.isPlayerMoving() then mouseOffClient(OFF_CLIENT_RANDOM);
-  end;
-  if progressScreen.isOpen(500) then
-    wait(gaussRangeInt(500, 3000))
-  else
-    wait(gaussRangeInt(0, 750));
-end;
-
-begin
-  clearDebug();
-  engine.setAntiBan(doAntiBan);
   engine.run();
 end.
 
