@@ -50,7 +50,7 @@ begin
   if status < self.level then print(txt)
   else writeLn(txt);
 
-  if status = TLogStatus.ERROR then takeScreenshot(__SCRIPT_NAME);
+  if status = TLogStatus.ERROR then takeScreenshot(__SCRIPT_NAME + '.png');
 end
 
 function TLogger.__now(): string;

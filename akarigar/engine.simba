@@ -167,6 +167,7 @@ begin
     if playerManager.isBreakTime() then
     begin
       self.__activityManager.pause();
+      resourceManager.saveResources();
       playerManager.takeBreak();
     end;
   end;

@@ -26,8 +26,7 @@ begin
     end;
   end;
 
-  if tabBackpack.isFull() then exit(TTaskStatus.DONE);
-  exit(TTaskStatus.ERR);
+  exit(_('Failed to fill inventory with logs.', tabBackpack.isFull()));
 end;
 
 function CutTask(data: string): ^TCutTask;

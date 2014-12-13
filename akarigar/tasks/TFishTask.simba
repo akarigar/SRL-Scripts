@@ -99,8 +99,7 @@ begin
     end;
   end;
 
-  if tabBackpack.isFull() then exit(TTaskStatus.DONE)
-  else exit(TTaskStatus.ERR);
+  exit(_('Failed to fill inventory with fish.', tabBackpack.isFull()));
 end;
 
 function FishTask(data: string): ^TFishTask;

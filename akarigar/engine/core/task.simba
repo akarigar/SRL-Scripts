@@ -11,8 +11,15 @@ const __NO_DTM__ = -1;
 
 type TTaskStatus = (
   ERR,
-  DONE
+  OK
 );
+
+function _(txt: string; determinant: boolean = false): TTaskStatus;
+begin
+  if determinant then exit(TTaskStatus.OK);
+  logger.err(txt);
+  exit(TTaskStatus.ERR);
+end;
 
 type TTask = record
   name: string;

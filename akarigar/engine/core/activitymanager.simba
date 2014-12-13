@@ -13,7 +13,7 @@ end;
 
 procedure TActivityManager.destroy();
 begin
-  self.__previousStatus := TTaskStatus.DONE;
+  self.__previousStatus := TTaskStatus.OK;
   if self.__currentActivity <> nil then
   begin
     self.__currentActivity^.clear();

@@ -8,21 +8,22 @@ begin
   rawCount := tabBackpack.count();
   // Sometimes click the raw food and then the range.
   if (self.loopCount = 0) or (random() <= 0.1) then
-    tabBackpack.getSlotBox(random(tabBackpack.count() + 1)).mouse(MOUSE_LEFT);
+    tabBackpack.getSlotBox(random(tabBackpack.count()) + 1).mouse(MOUSE_LEFT);
 
-  if not playerManager.useObject(self.objectSettings) then exit(TTaskStatus.ERR);
+  if not playerManager.useObject(self.objectSettings) then
+    exit(_('Failed to find cooking range.'));
 
   while (randomlyWait(1000, 1500)) and
         (not productionScreen.clickStart()) and
         (inc(i) < self.tries) do;
   if (i >= self.tries) or (not tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 1300000)))
-    then exit(TTaskStatus.ERR);
+    then exit(_('Failed to start cooking.'));
 
   burnedCount := rawCount - tabBackpack.count();
   if findColor(x, y, 65535, tabBackpack.getBounds()) then inc(burnedCount);
   resourceManager.updateResource(self.recipe.itemsIn[0].name, -burnedCount);
 
-  exit(TTaskStatus.DONE);
+  exit(TTaskStatus.OK);
 end;
 
 function CookTask(data: string): ^TCookTask;

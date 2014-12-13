@@ -6,32 +6,27 @@ function TBankTask.__bank(): TTaskStatus;
 var i: integer;
 begin
   if (length(self.recipe.itemsIn) = 0) and (tabBackpack.count() = 0) then
-    exit(TTaskStatus.DONE);
-  logger.debug('Length %d', [length(self.recipe.itemsIn)]);
-  logger.debug('count %d', [tabBackpack.count()]);
+    exit(TTaskStatus.OK);
 
   while (randomlyWait()) and
         (not bankScreen.open(self.flag)) and
         (inc(i) < self.tries) do;
-  if i >= self.tries then exit(TTaskStatus.ERR);
+  if i >= self.tries then exit(_('Failed to open bank.'));
   i := 0;
 
   if (self.loopCount = 0) and (length(self.recipe.itemsIn) > 0) then
-    if bankScreen.makePreset(@self.recipe.itemsIn) then exit(TTaskStatus.DONE)
-    else exit(TTaskStatus.ERR);
+    exit(_('Failed to make preset.', bankScreen.makePreset(@self.recipe.itemsIn)));
 
   while (randomlyWait()) and
         (not self.__doTransaction()) and
         (inc(i) < self.tries) do;
-  if i >= self.tries then exit(TTaskStatus.ERR);
+  if i >= self.tries then exit(_('Failed to finish bank transaction.'));
   i := 0;
 
   while (randomlyWait()) and
         (not bankScreen.close()) and
         (inc(i) < self.tries) do;
-  if (i >= self.tries) or (not randomlyWait()) then
-    exit(TTaskStatus.ERR);
-  exit(TTaskStatus.DONE);
+  exit(_('Failed to close bank', (randomlyWait()) and (i < self.tries)));
 end;
 
 function TBankTask.__doTransaction(): boolean;

@@ -12,7 +12,7 @@ begin
   if self.loopCount = 0 then
      if (length(self.recipe.itemsIn) > 0) and (length(self.recipe.itemsOut) > 0) then
       self.recipe.itemsOut[0].dtm := dtmFromString(self.recipe.itemsIn[0].dtmString)
-    else exit(TTaskStatus.ERR);
+    else exit(_('Invalid burn task. Please report to akarigar.'));
   dtm := self.recipe.itemsOut[0].dtm;
   count := tabBackpack.countDtm(dtm);
 
@@ -25,10 +25,11 @@ begin
       if chatBox.findText(['light a fire here']) then
       begin
         p := playerManager.getPos();
-        if (p.x = -1) or (p.y = -1) then exit(TTaskStatus.ERR);
+        if (p.x = -1) or (p.y = -1) then exit(_('I got lost.'));
         inc(p.x, (random(3) - 1) * 15);
         inc(p.y, (random(3) - 1) * 15);
-        if not playerManager.walkTo(p, self.location) then exit(TTaskStatus.ERR);
+        if not playerManager.walkTo(p, self.location) then
+          exit(_('Failed to walk away to light a fire.'));
         continue;
       end;
 
@@ -52,8 +53,7 @@ begin
     timer.start();
   end;
   inc(self.recipe.itemsOut[0].count, count - tabBackpack.countDtm(dtm));
-  if tabBackpack.countDtm(dtm) = 0 then exit(TTaskStatus.DONE);
-  exit(TTaskStatus.ERR);
+  exit(_('Failed to burn every log.', tabBackpack.countDtm(dtm)));
 end;
 
 procedure TBurnTask.__waitForFireToEnd(dtm: integer);
