@@ -47,7 +47,7 @@ end;
 function Activity(xml: string): PActivity;
 var activity: PActivity;
 begin
-  if length(trim(xml)) = 0 then exit(nil);
+  if trim(xml) = '' then exit(nil);
   new(activity);
   activity^.fromString(xml);
   exit(activity);

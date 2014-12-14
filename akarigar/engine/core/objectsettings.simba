@@ -24,7 +24,7 @@ var
   data, args: TStringArray;
   i: integer;
 begin
-  if length(xml) = 0 then exit(nil);
+  if trim(xml) = '' then exit(nil);
   data := multiBetween(xml, '<obj>', '<');
   relative := nil;
 
@@ -42,9 +42,9 @@ begin
     child^.tol := strToInt(args[7]);
     child^.hue := strToFloat(args[8]);
     child^.sat := strToFloat(args[9]);
-    if length(args[10]) > 0 then child^.overText := explode(',', args[10])
+    if args[10] <> '' then child^.overText := explode(',', args[10])
     else child^.overText := [];
-    if length(args[11]) > 0 then child^.optionText := explode(',', args[11])
+    if args[11] <> '' then child^.optionText := explode(',', args[11])
     else child^.optionText := [];
     child^.relative := relative;
     relative := child;

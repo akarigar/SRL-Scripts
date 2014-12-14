@@ -1,0 +1,77 @@
+{$f-}
+
+const __INSTALL_PATH = [
+  'Includes\akarigar',
+  'Includes\SPS\img\akarigar',
+  'Scripts\AllInOne.simba'
+];
+
+procedure __deletePreviousFiles();
+var i: integer;
+begin
+  for i := 0 to high(__INSTALL_PATH) do
+    if fileExists(appPath + __INSTALL_PATH[i]) then
+      deleteFile(appPath + __INSTALL_PATH[i])
+    else if directoryExists(appPath + __INSTALL_PATH[i]) then
+      deleteDirectory(appPath + __INSTALL_PATH[i], true);
+end;
+
+procedure updateEngine();
+var
+  data: string;
+  f: integer;
+  currentVersion, latestVersion: extended;
+begin
+  currentVersion := strToFloatDef(settings.getKeyValue('AKE_version'), -1);
+  latestVersion := strToFloatDef(getPage('http://srl.akarigar.com/static/version.txt'), -1);
+
+  if latestVersion = -1 then
+  begin
+    writeLn('Failed to retrieve update info from server. Contact akarigar.');
+  end;
+
+  if currentVersion >= latestVersion then
+  begin
+    writeLn('No update available.');
+    exit;
+  end;
+  writeLn('Starting update from version ', currentVersion, ' to version ', latestVersion);
+
+  __deletePreviousFiles();
+
+  writeLn('Downloading update archive.');
+  data := getPage('http://srl.akarigar.com/static/engine.zip');
+  if data = '' then
+  begin
+    writeLn('Failed to retrieve archive from server. Contact akarigar.');
+    terminateScript();
+  end;
+
+  if (f := rewriteFile(appPath + '.engine.zip', false)) = -1 then
+  begin
+    writeLn('Failed to create update archive.');
+    terminateScript();
+  end;
+
+  if not writeFileString(f, data) then
+  begin
+    writeLn('Failed to create update archive.');
+    closeFile(f);
+    terminateScript();
+  end;
+  closeFile(f);
+
+  writeLn('Extracting archive.');
+  try
+    unzipFile(appPath + '.engine.zip', appPath);
+  except
+    writeLn('Failed to extract archive.');
+    terminateScript();
+  finally
+    deleteFile(appPath + '.engine.zip');
+  end;
+
+  settings.setKeyValue('AKE_version', floatToStr(latestVersion));
+  writeLn('Updated successfully. Please restart Simba.');
+  terminateScript();
+end;

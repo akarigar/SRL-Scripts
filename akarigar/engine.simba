@@ -19,6 +19,8 @@
 {$include_once engine/core/task.simba}
 {$include_once engine/core/activity.simba}
 {$include_once engine/core/activitymanager.simba}
+
+{$include_once engine/util/updater.simba}
 {$f-}
 
 type TEngine = record
@@ -181,6 +183,7 @@ end;
 function TEngine.run(): boolean;
 begin
   clearDebug();
+  updateEngine();
   self.__initPlayerForm();
   runPlayerForm();
   if not playerForm.isScriptReady then exit(false);

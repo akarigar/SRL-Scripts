@@ -90,7 +90,7 @@ var
   keys: TStringArray;
 begin
   keyData := self.__read('_keys');
-  if length(keyData) = 0 then exit;
+  if keyData = '' then exit;
   keys := explode(',', keyData);
   for i := 0 to high(keys) do
     self.__resources.put(keys[i], variant(strToInt(self.__read(keys[i]))));

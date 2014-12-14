@@ -64,7 +64,7 @@ begin
 
   // Make the DTMs
   for i := 0 to high(self.recipe.itemsOut) do
-    if length(self.recipe.itemsOut[i].dtmString) = 0 then
+    if self.recipe.itemsOut[i].dtmString = '' then
       self.recipe.itemsOut[i].dtm := __NO_DTM__
     else
       self.recipe.itemsOut[i].dtm := dtmFromString(self.recipe.itemsOut[i].dtmString);
@@ -115,7 +115,7 @@ var count, i, j: integer;
 begin
   for i := 0 to high(self.recipe.itemsOut) do
   begin
-    if length(self.recipe.itemsOut[i].dtmString) = 0 then
+    if self.recipe.itemsOut[i].dtmString = '' then
       count := 28 - tabBackpack.count()
     else begin
       count := tabBackpack.countDtm(self.recipe.itemsOut[i].dtm);
