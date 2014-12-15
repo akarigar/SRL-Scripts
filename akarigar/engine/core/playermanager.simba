@@ -87,7 +87,6 @@ begin
   for i := 0 to tries do
   begin
     b := atpa[i].getBounds();
-    randomlyWait();
     mouse(atpa[i][random(length(atpa[i]))]);
     if isMouseOverText(obj^.overText) then
     begin

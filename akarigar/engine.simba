@@ -27,6 +27,8 @@ type TEngine = record
   declarePlayers: procedure();
 
   __activityManager: TActivityManager;
+  __mouseMoveTimer: TTimeMarker;
+  __recentlyClicked: boolean;
 end;
 
 var engine: TEngine;
@@ -44,6 +46,11 @@ begin
 end;
 
 // End Setters =================================================================
+
+procedure TEngine.notifyClick();
+begin
+  self.__recentlyClicked := true;
+end;
 
 procedure TEngine.__declarePlayers();
 var
@@ -73,29 +80,37 @@ end;
 
 procedure TEngine.__doAntiBan();
 begin
-  randomlyWait(500, 1000);
-  if minimap.isPlayerMoving() or (not isMouseOnClient()) then
+  wait(50 + random(100));
+  closeAdWindow();
+
+  if progressScreen.isOpen() then
   begin
-    randomlyWait(1000, 2000);
+    if isMouseOnClient() then mouseOffClient(OFF_CLIENT_RANDOM);
+    randomlyWait(750, 1500);
     exit;
   end;
 
-  case random(100) of
-    1..5:
+  if (not self.__recentlyClicked) and (self.__mouseMoveTimer.getTime() < 5000) then
+  begin
+    if random(500) = 0 then
       if self.__activityManager.getRelatedSkill() = SKILL_NONE then
         hoverRandomSkill()
       else
         hoverSkill(self.__activityManager.getRelatedSkill());
-    6..15: sleepAndMoveMouse(randomRange(200, 1000));
-    16..25:
-    begin
-      if random() > 0.5 then pickupMouse();
-      smallRandomMouse(gaussRangeInt(400, 1200));
-    end;
-    26..50: mouseOffClient(OFF_CLIENT_RANDOM);
+    exit;
   end;
+  sleepAndMoveMouse(gaussRangeInt(250, 500));
 
-  randomlyWait(1000, 2000);
+  self.__mouseMoveTimer.start();
+  self.__recentlyClicked := false;
+  case random(100) of
+    0..9: smallRandomMouse(randomRange(50, 200));
+    30..50:
+      if minimap.isPlayerMoving() then
+        mouse(minimap.getBounds().getGaussPoint())
+      else
+        mouse(mainscreen.getBounds().getGaussPoint());
+  end;
 end;
 
 procedure TEngine.__initPlayerForm();
@@ -205,6 +220,8 @@ begin
   if SRL_Events[EVENT_ANTIBAN] = nil then
     self.setAntiBan(defaultAntiBan);
 
+  self.__recentlyClicked := false;
+  self.__mouseMoveTimer.start();
   addOnTerminate('destroyEngine');
   self.__runLoop();
   exit(true);
@@ -213,4 +230,11 @@ end;
 procedure destroyEngine();
 begin
   engine.__destroy();
+end;
+
+procedure fastClick(button: integer); override;
+begin
+  if button = MOUSE_MOVE then exit;
+  engine.notifyClick();
+  inherited(button);
 end;

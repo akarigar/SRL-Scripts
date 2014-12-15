@@ -23,7 +23,12 @@ var
   currentVersion, latestVersion: extended;
 begin
   currentVersion := strToFloatDef(settings.getKeyValue('AKE_version'), -1);
-  latestVersion := strToFloatDef(getPage('http://srl-akarigar.rhcloud.com/static/media/version.txt'), -1);
+  // strToFloatDef doesn't work all the time here..
+  try
+    latestVersion := strToFloat(getPage('http://srl-akarigar.rhcloud.com/static/media/version.txt'));
+  except
+    latestVersion := -1;
+  end;
 
   if latestVersion = -1 then
   begin

@@ -48,7 +48,7 @@ begin
   if status > TLogStatus.DEBUG then self.__smartLog(status, txt);
   txt := '[' + self.__now() + '] ' + padL(toStr(status), 5) + ' -> ' + txt;
   print(txt)
-  if status >= self.level then writeLn(txt);
+  if disableSRLDebug and (status >= self.level) then writeLn(txt);
 
   if status = TLogStatus.ERROR then takeScreenshot(__SCRIPT_NAME + '.png');
 end
