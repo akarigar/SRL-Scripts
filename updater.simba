@@ -71,7 +71,12 @@ begin
     deleteFile(appPath + '.engine.zip');
   end;
 
+  if fileExists(scriptFile) then deleteFile(scriptFile);
   settings.setKeyValue('AKE_version', floatToStr(latestVersion));
   writeLn('Updated successfully. Please restart Simba.');
   terminateScript();
 end;
+
+begin
+  updateEngine();
+end.

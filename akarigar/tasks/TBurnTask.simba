@@ -53,7 +53,7 @@ begin
     timer.start();
   end;
   inc(self.recipe.itemsOut[0].count, count - tabBackpack.countDtm(dtm));
-  exit(_('Failed to burn every log.', tabBackpack.countDtm(dtm)));
+  exit(_('Failed to burn every log.', tabBackpack.countDtm(dtm) = 0));
 end;
 
 procedure TBurnTask.__waitForFireToEnd(dtm: integer);

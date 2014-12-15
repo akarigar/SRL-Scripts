@@ -2,7 +2,7 @@
 {$include_once ../util/loader.simba}
 {$f-}
 
-const __URL__ = 'http://akarigar.com/srl/activity/%d/next/?items=%s&skills=%s';
+const __URL__ = 'http://srl-akarigar.rhcloud.com/activity/%d/next/?items=%s&skills=%s';
 
 type TActivityManager = record
   __activityTimer: TTimeMarker;

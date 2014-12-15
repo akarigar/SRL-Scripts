@@ -18,7 +18,11 @@ end;
 
 var playerManager: TPlayerManager = [nil, -1, 0];
 
-function TPlayerManager.findObject(obj: PObjectSettings; out b: Tbox): boolean;
+function TPlayerManager.findObject(
+  obj: PObjectSettings;
+  out b: Tbox;
+  tries: integer = 5
+): boolean;
 var
   i, x, y: integer;
   tpa: TPointArray;
@@ -78,7 +82,9 @@ begin
 
   // The first potential objects matching our option or over text is the object
   // we are looking for.
-  for i := 0 to high(atpa) do
+  if tries > high(atpa) then
+    tries := high(atpa);
+  for i := 0 to tries do
   begin
     b := atpa[i].getBounds();
     randomlyWait();
@@ -146,7 +152,7 @@ procedure TPlayerManager.loadArea(location: integer);
 begin
   if self.area <> nil then dispose(self.area);
   new(self.area);
-  self.area^.setup('LOCATION_' + intToStr(location), RUNESCAPE_OTHER);
+  self.area^.setup(intToStr(location), 'akarigar\');
 end;
 
 procedure TPlayerManager.setup(isNewPlayer: boolean = true);
@@ -196,11 +202,18 @@ begin
   end;
 end;
 
-function TPlayerManager.useObject(obj: PObjectSettings): boolean;
+function TPlayerManager.useObject(obj: PObjectSettings; attempts: integer = 3): boolean;
 var bounds: TBox;
 begin
   logger.info('Looking for object.');
-  if not findObject(obj, bounds) then exit(false);
+  while (not findObject(obj, bounds)) and (dec(attempts) >= 0) do;
+
+  if attempts <= 0 then
+  begin
+    logger.info('Failed to find object.');
+    exit(false);
+  end;
+
   logger.info('Found object. Now using object.');
   wait(50 + random(100));
   if length(obj^.optionText) = 0 then
