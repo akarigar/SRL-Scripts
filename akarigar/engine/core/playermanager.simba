@@ -12,8 +12,8 @@ const
 type TPlayerManager = record
   area: ^TSPSArea;
   currentLocation: integer;
-  __nextBreakTime: LongWord;
-  __sessionExpireTime: LongWord;
+
+  __nextBreakTime, __sessionExpireTime: LongWord;
 end;
 
 var playerManager: TPlayerManager = [nil, -1, 0];
@@ -113,8 +113,8 @@ var
 begin
   for i := 0 to SKILL_COUNT - 1 do
   begin
-    if i > 0 then str += ',';
-    str += intToStr(tabStats.getSkillLevel(i));
+    if not players[currentPlayer].booleans[i] then continue;
+    str += format('[%d,%d],', [i, tabStats.getSkillLevel(i)]);
   end;
   exit(str + ']');
 end;
