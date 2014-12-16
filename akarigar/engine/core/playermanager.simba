@@ -116,7 +116,7 @@ begin
     if not players[currentPlayer].booleans[i] then continue;
     str += format('[%d,%d],', [i, tabStats.getSkillLevel(i)]);
   end;
-  exit(str + ']');
+  exit(copy(str, 1, length(str) - 1) + ']');
 end;
 
 function TPlayerManager.isActive(): boolean;

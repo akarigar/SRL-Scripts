@@ -52,7 +52,7 @@ begin
   self.__recentlyClicked := true;
 end;
 
-procedure TEngine.__declarePlayers();
+procedure TEngine.__declarePlayers(skills: TIntegerArray);
 var
   i, j: integer;
 begin
@@ -64,11 +64,13 @@ begin
   for i := 0 to high(players) do
     with playerForm.players[i] do
     begin
-      j := high(playerForm.editBoxLabels) - 3;
-      players[i].world := strToInt(settings[j]);
-      players[i].integers[P_PLAY_TIME] := strToInt(settings[inc(j)]) * 60000;
-      players[i].integers[P_BREAK_LENGTH] := strToInt(settings[inc(j)]) * 60000;
-      players[i].integers[P_SESSION_TIME] := strToInt(settings[inc(j)]) * 60000;
+      players[i].world := strToInt(settings[0]);
+      players[i].integers[P_PLAY_TIME] := strToInt(settings[1]) * 60000;
+      players[i].integers[P_BREAK_LENGTH] := strToInt(settings[2]) * 60000;
+      players[i].integers[P_SESSION_TIME] := strToInt(settings[3]) * 60000;
+
+      for j := 0 to high(skills) do
+        players[i].booleans[skills[j]] := settings[j + 4] = 'True';
     end;
 end;
 
@@ -113,7 +115,23 @@ begin
   end;
 end;
 
-procedure TEngine.__initPlayerForm();
+procedure TEngine.__fetchSupportedSkills(out skills: TIntegerArray);
+var
+  data: TStringArray;
+  i: integer;
+begin
+  data := explode(',', getPage('http://srl-akarigar.rhcloud.com/activity/skills/'));
+  try
+    for i := 0 to high(data) do
+      skills.append(strToInt(data[i]));
+  except
+    writeLn('Fatal error occurred while communicating with server.');
+    terminateScript();
+  end;
+end;
+
+procedure TEngine.__initPlayerForm(skills: TIntegerArray);
+var i: integer;
 begin
   with playerForm do
   begin
@@ -133,6 +151,13 @@ begin
       'Approximately how long should every break be?',
       'Approximately how long to play before switching players? (0 to never switch players)'
     ]);
+
+    for i := 0 to high(skills) do
+    begin
+      checkBoxLabels.append('Train ' + SKILL_NAMES[skills[i]] + '?');
+      checkBoxDefaults.append('True');
+      checkBoxHints.append('Should I train ' + SKILL_NAMES[skills[i]] + '?');
+    end;
   end;
 end;
 
@@ -196,14 +221,16 @@ begin
 end;
 
 function TEngine.run(): boolean;
+var skills: TIntegerArray;
 begin
   clearDebug();
   updateEngine();
-  self.__initPlayerForm();
+  self.__fetchSupportedSkills(skills);
+  self.__initPlayerForm(skills);
   runPlayerForm();
   if not playerForm.isScriptReady then exit(false);
 
-  self.__declarePlayers();
+  self.__declarePlayers(skills);
   {$IFNDEF DEBUG}
   disableSRLDebug := true;
   {$ENDIF}
