@@ -281,7 +281,7 @@ end;
 
 function TPlayerManager.__ensureCorrectLocation(location: integer): boolean;
 begin
-  if self.currentLocation = location then exit(true);
+  if (location = LOCATION_NONE) or (self.currentLocation = location) then exit(true);
   currentLocation := location;
   self.loadArea(location);
   exit(lodestoneScreen.teleportTo(location) and randomlyWait(15000, 17000));

@@ -4,6 +4,7 @@
 {$include_once ../../tasks/TCookTask.simba}
 {$include_once ../../tasks/TCutTask.simba}
 {$include_once ../../tasks/TFishTask.simba}
+{$include_once ../../tasks/TProcessTask.simba}
 {$f-}
 
 function Task(data: string): PTask;
@@ -16,6 +17,7 @@ begin
     'Cook': exit(CookTask(data));
     'Cut': exit(CutTask(data));
     'Fish': exit(FishTask(data));
+    'Process': exit(ProcessTask(data));
     else exit(nil);
   end;
 end;

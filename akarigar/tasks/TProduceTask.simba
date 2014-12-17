@@ -1,0 +1,35 @@
+{$f-}
+
+type TProcessTask = TTask;
+
+function TProcessTask.__process(): TTaskStatus;
+var i: integer = 0;
+begin
+  if tabBackpack.count() <= 1 then exit(_('Ran out of materials!'));
+
+  while (inc(i) <= self.tries) do
+  begin
+    tabBackpack.getSlotBox(random(4) + 1).mouse(MOUSE_LEFT);
+    if productionScreen.isOpen(1000) then break;
+  end;
+  if (not randomlyWait()) and (i > self.tries) then
+    exit(_('Failed to open production screen.'));
+  i := 0;
+
+  while (not productionScreen.clickStart()) and (inc(i) < self.tries) do;
+  exit(_(
+    'Failed to click start on production screen.',
+    (i < self.tries) and
+    randomlyWait() and
+    tabBackpack.waitSlotPixelChange(tabBackpack.count(), gaussRangeInt(110000, 1300000))
+  ));
+end;
+
+function ProcessTask(data: string): ^TProcessTask;
+var task: ^TProcessTask;
+begin
+  new(task);
+  task^.init('Process', data, task^.__process);
+  task^.skill := SKILL_NONE;
+  exit(task);
+end;

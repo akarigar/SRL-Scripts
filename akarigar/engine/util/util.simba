@@ -29,6 +29,7 @@ const SKILL_NAMES = [
   'Divination'
 ];
 
+const LOCATION_NONE = 1338;
 const SKILL_NONE = 1338;
 
 function getGaussRangePercentage(value: integer; percentage: extended = 0.1): integer;

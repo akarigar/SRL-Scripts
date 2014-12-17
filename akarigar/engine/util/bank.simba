@@ -1,15 +1,8 @@
 {$f-}
 
-function TRSBankScreen.withdraw(name: string; amount: integer; toFamiliar: boolean = false): boolean; overload;
+function TRSBankScreen.withdraw(name: string; amount: integer): boolean; overload;
 begin
-  if not self.clickButton(BANK_BUTTON_SEARCH, random() > 0.5) then exit(false);
-  randomlyWait();
-  typeSend(name);
-
-  if self.isPackEmpty() then exit(false);
-
-  randomlyWait(500, 1000);
-  exit(self.withdraw('', 0, 1, amount, toFamiliar));
+  exit(self.searchBank(name) and self.withdraw(1, amount, [''], true));
 end;
 
 function TRSBankScreen.makePreset(items: ^TItemArray): boolean
