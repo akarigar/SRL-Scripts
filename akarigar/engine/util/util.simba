@@ -102,4 +102,29 @@ begin
   exit(-1);
 end;
 
+function TRSTabBackpack.countItemAmount(dtm: integer): integer;
+var
+  x, y: integer;
+  items: TIntegerArray;
+begin
+  if not self.open() then exit(0);
+
+  items := findItem(dtm, self.getSlotBoxes(), false);
+  result := length(items);
+
+  if (result = 1) and findColor(x, y, 65535, self.getSlotBox(items[0] + 1)) then
+    result := getItemAmount(self.getSlotBox(items[0] + 1));
+end;
+
+function TRSTabBackpack.isItemStackable(dtm: integer): boolean;
+var
+  x, y: integer;
+  items: TIntegerArray;
+begin
+  if not self.open() then exit(false);
+
+  items := findItem(dtm, self.getSlotBoxes(), false);
+  exit((length(items) = 1) and findColor(x, y, 65535, self.getSlotBox(items[0] + 1)));
+end;
+
 {$f+}

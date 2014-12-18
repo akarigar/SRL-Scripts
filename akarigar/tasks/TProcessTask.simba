@@ -10,10 +10,15 @@ begin
   while (inc(i) <= self.tries) do
   begin
     tabBackpack.getSlotBox(random(4) + 1).mouse(MOUSE_LEFT);
+    if toolScreen.isOpen(1000) and (not toolScreen.select(self.flag and 3 + 1)) then continue;
     if productionScreen.isOpen(1000) then break;
   end;
   if (not randomlyWait()) and (i > self.tries) then
-    exit(_('Failed to open production screen.'));
+    exit(_('Failed to open production or tool screen.'));
+  i := 0;
+
+  while (not productionScreen.selectBox(self.flag shr 2 + 1)) and (inc(i) < self.tries) do;
+  if i > self.tries then exit(_('Failed to select item to produce.'));
   i := 0;
 
   while (not productionScreen.clickStart()) and (inc(i) < self.tries) do;

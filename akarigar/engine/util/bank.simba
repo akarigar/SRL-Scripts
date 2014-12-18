@@ -2,7 +2,7 @@
 
 function TRSBankScreen.withdraw(name: string; amount: integer): boolean; overload;
 begin
-  exit(self.searchBank(name) and self.withdraw(1, amount, [''], true));
+  exit(self.searchBank(name) and self.withdraw(1, amount, ['']));
 end;
 
 function TRSBankScreen.makePreset(items: ^TItemArray): boolean

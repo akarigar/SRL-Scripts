@@ -118,13 +118,22 @@ begin
     if self.recipe.itemsOut[i].dtmString = '' then
       count := 28 - tabBackpack.count()
     else begin
-      count := tabBackpack.countDtm(self.recipe.itemsOut[i].dtm);
+      count := tabBackpack.countItemAmount(self.recipe.itemsOut[i].dtm);
+
+      if tabBackpack.isItemStackable(self.recipe.itemsOut[i].dtm) then
+        dec(count, self.recipe.itemsOut[i].count);
+
       inc(self.recipe.itemsOut[i].count, count);
       resourceManager.updateResource(self.recipe.itemsOut[i].name, count);
     end;
 
     for j := 0 to high(self.recipe.itemsIn) do
-      resourceManager.updateResource(self.recipe.itemsIn[i].name, -count);
+      resourceManager.updateResource(
+        self.recipe.itemsIn[j].name,
+        round(
+          -count * self.recipe.itemsIn[j].amount / self.recipe.itemsOut[i].amount
+        )
+      );
   end;
 end;
 
