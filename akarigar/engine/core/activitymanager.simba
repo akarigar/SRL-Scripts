@@ -37,7 +37,7 @@ begin
   exit(
     (__previousStatus <= TTaskStatus.ERR) or
     (self.__currentActivity = nil) or
-    (self.__currentActivity^.isDone())
+    (self.__currentActivity^.quota < self.__activityTimer.getTime())
   );
 end;
 

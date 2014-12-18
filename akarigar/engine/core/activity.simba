@@ -23,17 +23,6 @@ begin
   self.setupTask := nil;
 end;
 
-function TActivity.isDone(): boolean;
-var i, items: integer = 0;
-begin
-  if self.quota = 0 then exit(false);
-
-  for i := 0 to high(self.tasks) do
-    items += self.tasks[i]^.itemsGained();
-
-  exit(items >= self.quota);
-end;
-
 type TActivityList = array of PActivity;
 
 procedure TActivityList.append(activity: PActivity);
