@@ -1,0 +1,26 @@
+{$f-}
+
+const __URL__ = 'http://srl-akarigar.rhcloud.com';
+
+type TServer = record
+  __client: integer;
+end;
+
+var server: TServer;
+
+function TServer.fetchPage(path: string; useCookies: boolean = true): string;
+begin
+  if not useCookies then exit(getPage(__URL__ + path));
+  exit(getHttpPage(self.__client, __URL__ + path));
+end;
+
+procedure TServer.free();
+begin
+  freeHttpClient(self.__client);
+end;
+
+procedure TServer.setup();
+begin
+  self.__client := initializeHttpClient(true);
+  writeln('setup server: ', self.__client);
+end;

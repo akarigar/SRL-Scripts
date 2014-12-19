@@ -2,8 +2,6 @@
 {$include_once ../util/loader.simba}
 {$f-}
 
-const __URL__ = 'http://srl-akarigar.rhcloud.com/activity/%d/next/?items=%s&skills=%s';
-
 type TActivityManager = record
   __activityTimer: TTimeMarker;
   __currentActivity: PActivity;
@@ -48,7 +46,7 @@ begin
   resourceManager.saveResources();
   url := self.__getUrl();
   self.destroy();
-  self.__currentActivity := Activity(getPage(url));
+  self.__currentActivity := Activity(server.fetchPage(url));
 
   if self.__currentActivity = nil then
   begin
@@ -123,7 +121,7 @@ begin
   if self.__currentActivity <> nil then activityId := self.__currentActivity^.id;
   result := stringReplace(
     format(
-      __URL__,
+      '/activity/%d/next/?items=%s&skills=%s',
       [activityId, resourceManager.toString(), playerManager.getSkills()]
     ),
     ' ',

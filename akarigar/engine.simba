@@ -16,6 +16,7 @@
 {$include_once engine/core/item.simba}
 {$include_once engine/core/playermanager.simba}
 {$include_once engine/core/resourcemanager.simba}
+{$include_once engine/core/server.simba}
 {$include_once engine/core/task.simba}
 {$include_once engine/core/activity.simba}
 {$include_once engine/core/activitymanager.simba}
@@ -78,6 +79,7 @@ procedure TEngine.__destroy();
 begin
   self.__activityManager.destroy();
   resourceManager.clear();
+  server.free();
 end;
 
 procedure TEngine.__doAntiBan();
@@ -120,7 +122,7 @@ var
   data: TStringArray;
   i: integer;
 begin
-  data := explode(',', getPage('http://srl-akarigar.rhcloud.com/activity/skills/'));
+  data := explode(',', server.fetchPage('/activity/skills/', false));
   try
     for i := 0 to high(data) do
       skills.append(strToInt(data[i]));
@@ -249,6 +251,7 @@ begin
 
   self.__recentlyClicked := false;
   self.__mouseMoveTimer.start();
+  server.setup();
   addOnTerminate('destroyEngine');
   self.__runLoop();
   exit(true);
